@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "outDir": "dist/js/",
+        "jsx": "react",
+        "sourceMap": true,
+        "moduleResolution": "node",
+        "baseUrl": ".",
+        "paths": {
+            "scheduler": ["types/scheduler"],
+            "scheduler/tracing": ["types/scheduler/tracing.d.ts"],
+            "csstype": ["types/csstype"],
+            "prop-types": ["types/prop-types"],
+            "react": ["types/react"],
+            "react-dom": ["types/react-dom"]
+        }
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "files": [
+        "types/react/index.d.ts",
+        "types/react-dom/index.d.ts"
+    ]
+}
