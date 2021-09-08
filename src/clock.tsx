@@ -1,4 +1,4 @@
-import { ObservableNode } from './hoc.js'
+import { Watch } from './hoc.js'
 import { React } from './react.js'
 import { interval, map, Observable, startWith } from './rx.js'
 
@@ -15,8 +15,8 @@ export const getState = (): State => {
 export const Clock = ({state}: { readonly state: State}) => (
   <div>
     Ticks:
-    <ObservableNode>
-      { state.pipe(map(n => <span>{n}</span>)) }
-    </ObservableNode>
+    <Watch stream={state}>
+      { n => <span>{n}</span> }
+    </Watch>
   </div>
 )

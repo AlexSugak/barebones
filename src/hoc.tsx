@@ -1,6 +1,6 @@
 import { React } from './react.js'
 import { equals } from './eq.js'
-import { Observable, Subscription } from './rx.js'
+import { map, Observable, Subscription } from './rx.js'
 
 export interface ObservableNodeProps {
   children?: Observable<React.ReactNode>
@@ -98,3 +98,8 @@ export class ObservableNode
     return newState.renderCache !== this.state.renderCache
   }
 }
+
+export const Watch = <T,>({stream, children}: {stream: Observable<T>, children: (s: T) => React.ReactNode}) => 
+(<ObservableNode>
+  { stream.pipe(map(s => children(s))) }
+</ObservableNode>)
