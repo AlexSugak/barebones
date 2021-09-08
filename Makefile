@@ -47,10 +47,7 @@ reload: ## reloads app tab in chrome
 watch:
 	tsc-watch --onSuccess "make reload"
 
-_dev: serve watch ## private, do not use
-
-dev: ## builds app, serves it, then rebuilds and reloads its window in chrome every time src files are changed
-	make _dev -j2
+dev: serve watch ## !!!Important run with -j2 option!!! Builds app, serves it, then rebuilds and reloads its window in chrome every time src files are changed
 
 all: deps clean build serve ## builds the app and opens it in browser
 
