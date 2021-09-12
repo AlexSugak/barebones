@@ -23,7 +23,6 @@ export class ObservableNode
     renderCache: null,
     subscription: null
   }
-
   static _endState: ObservableNodeState = {
     subscription: null
   }
@@ -47,7 +46,6 @@ export class ObservableNode
       }
 
       this.setState({
-        renderCache: this.state.renderCache,
         subscription
       })
     }
@@ -99,7 +97,7 @@ export class ObservableNode
   }
 }
 
-export const Watch = <T,>({stream, children}: {stream: Observable<T>, children: (s: T) => React.ReactNode}) => 
+export const View = <T,>({stream, children}: {stream: Observable<T>, children: (s: T) => React.ReactNode}) => 
 (<ObservableNode>
   { stream.pipe(map(s => children(s))) }
 </ObservableNode>)

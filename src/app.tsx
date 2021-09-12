@@ -1,10 +1,16 @@
-import { Clock, getState as getClockState } from './clock.js'
+import { getState as getClockState } from './clock.js'
+import { Clock } from './components.js'
 import { React } from './react.js'
+import { BehaviorSubject } from './rx.js'
+
+const clockState = getClockState()
+const clockStateMemo = new BehaviorSubject<number>(0)
+clockState.subscribe(clockStateMemo)
 
 export const App = ({}) => {
-  const clockState = getClockState()
+  
   return (<>
     <div>Bare Bones react+ts app</div>
-    <Clock state={clockState} />
+    <Clock state={clockStateMemo} />
   </>)
 }

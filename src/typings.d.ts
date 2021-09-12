@@ -1,4 +1,4 @@
-declare module 'https://unpkg.com/es-react' {
+declare module 'https://unpkg.com/es-react/dev' {
     import * as React from 'react';
     import * as ReactDOM from 'react-dom';
 

@@ -1,10 +1,12 @@
 .DEFAULT_GOAL := help
-.PHONY: deps clean build serve watch dev all 
+.PHONY: deps clean build serve watch dev dev-server all 
 
 deps: ## installs dependencies
 	npm install -g typescript
 	npm install -g http-server
 	npm install -g tsc-watch
+	npm install -g express
+	npm install -g ws
 
 clean: ## cleans app build artifacts
 	@echo 'cleaning up dist'
@@ -48,6 +50,16 @@ watch:
 	tsc-watch --onSuccess "make reload"
 
 dev: serve watch ## !!!Important run with -j2 option!!! Builds app, serves it, then rebuilds and reloads its window in chrome every time src files are changed
+
+NODE_PATH=$(shell npm root -g)
+
+dev-server: ## starts dev server
+	NODE_PATH=${NODE_PATH} node dev-server.js
+
+watch-hot:
+	tsc-watch --onSuccess "curl -X POST http://localhost:3000/compileSuccess"
+
+dev-hot: serve dev-server watch-hot ## !!!Important run with -j3 option!!! Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
 
 all: deps clean build serve ## builds the app and opens it in browser
 

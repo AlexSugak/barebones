@@ -1,7 +1,6 @@
-import { Watch } from './hoc.js'
+import { View } from './hoc.js'
 import { React } from './react.js'
 import { interval, map, Observable, startWith } from './rx.js'
-
 
 export type State = Observable<number>
 
@@ -12,11 +11,17 @@ export const getState = (): State => {
   )
 }
 
-export const Clock = ({state}: { readonly state: State}) => (
+export const Clock = ({state}: { readonly state: State}) => {
+  const v = '2'
+  console.log('rendering clock v' + v)
+  return (
   <div>
-    Ticks:
-    <Watch stream={state}>
+    Ticks {v}:
+    <View stream={state}>
       { n => <span>{n}</span> }
-    </Watch>
+    </View>
   </div>
-)
+)}
+
+export type ClockType = typeof Clock 
+
