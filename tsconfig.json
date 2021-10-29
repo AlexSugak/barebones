@@ -1,28 +1,35 @@
 {
+  "compilerOptions": {
+      "target": "ES2017",
+      "module": "esnext",
+      "outDir": "dist/js/",
+      "jsx": "react",
+      "sourceMap": true,
+      "incremental": true,
+      "removeComments": true,
+      "preserveConstEnums": true,
+      "noImplicitReturns": true,
+      "moduleResolution": "node",
+      "typeRoots": ["./types"],
+      "baseUrl": ".",
+      "paths": {
+          "scheduler": ["types/scheduler"],
+          "scheduler/tracing": ["types/scheduler/tracing.d.ts"],
+          "csstype": ["types/csstype"],
+          "prop-types": ["types/prop-types"],
+          "react": ["types/react"],
+          "react-dom": ["types/react-dom"],
+          "rxjs": ["types/rx"],
+      }
+  },
+  "include": [
+      "src/**/*"
+  ],
+  "ts-node": {
     "compilerOptions": {
-        "target": "ES2017",
-        "module": "esnext",
-        "outDir": "dist/js/",
-        "jsx": "react",
-        "sourceMap": true,
-        "incremental": true,
-        "removeComments": true,
-        "preserveConstEnums": true,
-        "noImplicitReturns": true,
-        "moduleResolution": "node",
-        "typeRoots": ["./types"],
-        "baseUrl": ".",
-        "paths": {
-            "scheduler": ["types/scheduler"],
-            "scheduler/tracing": ["types/scheduler/tracing.d.ts"],
-            "csstype": ["types/csstype"],
-            "prop-types": ["types/prop-types"],
-            "react": ["types/react"],
-            "react-dom": ["types/react-dom"],
-            "rxjs": ["types/rx"],
-        }
-    },
-    "include": [
-        "src/**/*"
-    ]
+      "module": "commonjs",
+      "lib": ["ES2019", "dom"],
+      "target": "ES2019"
+    }
+  }
 }

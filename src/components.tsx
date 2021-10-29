@@ -58,6 +58,7 @@ const hotImport = async <P extends object>(module: string, m: (module: any) => C
 import { ClockType } from './clock.js'
 const Clock = await hotImport('./clock.js', m => m.Clock as ClockType)
 
+// TODO: do not make components hot if not isDev
 export {
   Clock
 }

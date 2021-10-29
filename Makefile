@@ -1,8 +1,9 @@
 .DEFAULT_GOAL := help
-.PHONY: deps clean build serve watch dev dev-server all 
+.PHONY: deps clean build serve watch dev dev-server test all 
 
 deps: ## installs dependencies
 	npm install -g typescript
+	npm install -g ts-node
 	npm install -g http-server
 	npm install -g tsc-watch
 	npm install -g express
@@ -60,6 +61,9 @@ watch-hot:
 	tsc-watch --onSuccess "curl -X POST http://localhost:3000/compileSuccess"
 
 dev-hot: serve dev-server watch-hot ## !!!Important run with -j3 option!!! Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
+
+test: ## runs all tests
+	ts-node ./tests.ts
 
 all: deps clean build serve ## builds the app and opens it in browser
 
