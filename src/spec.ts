@@ -7,7 +7,7 @@ export interface SpecificationTest {
 
 export interface Specification {
   name: string,
-  specs: SpecificationTest[]
+  tests: SpecificationTest[]
 }
 
 export interface SpecificationResultBase {
@@ -40,7 +40,7 @@ export namespace SpecificationResult {
 
 export function runSpec(spec: Specification): SpecificationResult[] {
   const results: SpecificationResult[] = []
-  spec.specs.forEach(tst => {
+  spec.tests.forEach(tst => {
     try{
       if (tst.test()) {
         results.push({kind: 'Success', specName: spec.name})

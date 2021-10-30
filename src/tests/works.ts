@@ -3,13 +3,13 @@ import { Specification, SpecificationTest } from '../spec.js'
 const testsWork: SpecificationTest = {
   name: 'tests work',
   test: () => {
-    return false
+    return true
   }
 }
 
 export const allWorksSpec: Specification = {
   name: 'Basic tests',
-  specs: [
+  tests: [
     testsWork
   ]
 }

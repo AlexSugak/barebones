@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: deps clean build serve watch dev dev-server test all 
+.PHONY: deps clean build serve watch dev dev-server test test-watch all 
 
 deps: ## installs dependencies
 	npm install -g typescript
@@ -63,7 +63,11 @@ watch-hot:
 dev-hot: serve dev-server watch-hot ## !!!Important run with -j3 option!!! Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
 
 test: ## runs all tests
-	ts-node ./tests.ts
+	@ts-node ./tests.ts
+
+test-watch: ## runs all tests every time a file under ./src changes
+	@make test
+	@fswatch -or ./src | xargs -n1 -I {} make test  
 
 all: deps clean build serve ## builds the app and opens it in browser
 

@@ -26,6 +26,8 @@
       "src/**/*"
   ],
   "ts-node": {
+    "files": true,
+    "transpileOnly": true,
     "compilerOptions": {
       "module": "commonjs",
       "lib": ["ES2019", "dom"],
