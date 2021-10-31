@@ -1,4 +1,4 @@
-import { Specification, SpecificationTest } from '../spec.js'
+import { Specification, SpecificationTest } from '../spec'
 
 const testsWork: SpecificationTest = {
   name: 'tests work',
