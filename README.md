@@ -1,6 +1,8 @@
 # What
 The bare bones react app that does not use: webpack, babel, dev servers, 3rd party state management libs etc.
 
+As I work on it I stream most of it on [Twitch](https://www.twitch.tv/asugak), with recordings also available on [YouTube](https://www.youtube.com/channel/UCG1PR2mmXDTtPKoXqsfhFdA). The streams are in Russian.
+
 # Why
 One of the initial selling points of React was that `you can build your app the way you want it, with React only providing the View part of it`.
 
