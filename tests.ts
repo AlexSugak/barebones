@@ -18,7 +18,7 @@ const successTests: SuccessResult[] = results.filter(SpecificationResult.isSucce
 const failureTests: FailureResult[] = results.filter(SpecificationResult.isFailureResult)
 
 failureTests.forEach(ft => {
-  redLog(`Failed ${ft.specName} -> ${ft.errors.join(', ')}`)
+  redLog(`${ft.specName} -> ${ft.errors.join(', ')}`)
 })
 
 console.log(`Run ${results.length} test(s)`)

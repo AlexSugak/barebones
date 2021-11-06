@@ -67,7 +67,7 @@ test: ## runs all tests
 
 test-watch: ## runs all tests every time a file under ./src changes
 	@make test
-	@fswatch -or ./ | xargs -n1 -I {} make test  
+	@fswatch -or ./ | xargs -n1 -I {} sh -c 'clear && make test'  
 
 all: deps clean build serve ## builds the app and opens it in browser
 

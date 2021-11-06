@@ -93,7 +93,7 @@ export function runSpec(spec: Specification): SpecificationResult[] {
         })
       }
     } catch(e) {
-      results.push({kind: 'Failure', specName: spec.name, errors: [e.toString()]})
+      results.push({kind: 'Failure', specName: `${spec.name}: ${tst.name}`, errors: [e.toString()]})
     }
   })
 
