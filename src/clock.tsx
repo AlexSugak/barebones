@@ -12,7 +12,7 @@ export const getState = (): State => {
 }
 
 export const Clock = ({state}: { readonly state: State}) => {
-  const v = 'bbbbbb'
+  const v = ''
   console.log('rendering clock v' + v)
   return (
   <div>

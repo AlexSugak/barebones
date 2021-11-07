@@ -2,10 +2,12 @@ import { FailureResult, runSpec, SpecificationResult, SuccessResult } from './sr
 import { Colors, coloredLog } from './src/output'
 import { allWorksSpec } from './src/tests/works.spec'
 import { specs as specSpecs } from './src/tests/spec.spec'
+import { specs as routerSpecs } from './src/tests/navigation.spec'
 
 const specs = [
   allWorksSpec,
-  ...specSpecs
+  ...specSpecs,
+  ...routerSpecs
 ]
 
 const greenLog = coloredLog(Colors.FgGreen)
