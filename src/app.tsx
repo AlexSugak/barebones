@@ -23,11 +23,6 @@ export const App = ({}) => {
     <br/>
     <a href="#" onClick={e => {
       e.preventDefault()
-      routerState.navigate('/about')
-    }}>About</a>
-    <br/>
-    <a href="#" onClick={e => {
-      e.preventDefault()
       routerState.navigate('/posts/1')
     }}>Post 1</a>
     <br/>

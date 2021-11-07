@@ -6,15 +6,15 @@ export const specs = [
     'matchLocationToPath',
     [
       test('should match exact string', () => {
-        const [path] = matchLocationToPath('/about')
-        Expect.equals<Path>('/about', path)
+        const p = matchLocationToPath('/about')
+        Expect.equals<Path>('/about', p.path)
 
-        const [path2] = matchLocationToPath('/')
-        Expect.equals<Path>('/', path2)
+        const p2 = matchLocationToPath('/')
+        Expect.equals<Path>('/', p2.path)
       }),
       test('should match string with params', () => {
-        const [path] = matchLocationToPath('/posts/1')
-        Expect.equals<Path>('/posts/(?<id>.*)', path)
+        const p = matchLocationToPath('/posts/1')
+        Expect.equals<Path>('/posts/(?<id>.*)', p.path)
       })
     ]
   )

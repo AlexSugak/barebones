@@ -1,7 +1,8 @@
 import { React } from './react.js'
 import { View } from './hoc.js'
 import { Observable, map, BehaviorSubject } from './rx.js'
-import { matchLocationToPath, RouterConfig } from './navigation.js'
+import { matchLocationToPath } from './navigation.js'
+import { assertNever } from './errors.js'
 
 /**
  * Router
@@ -12,7 +13,6 @@ import { matchLocationToPath, RouterConfig } from './navigation.js'
  * - [-] Listen window.location changes => '/about' => { route: About } => rendering <About />
  * - [+-] <Link /> onclick => window.location => ... => rendering <About />
  */
-
 
  export class RouterState {
   private _location: BehaviorSubject<string> = new BehaviorSubject<string>('/')
@@ -28,17 +28,22 @@ import { matchLocationToPath, RouterConfig } from './navigation.js'
   }
 }
 
-export const routerConfig: RouterConfig = {
-  '/': () => <div>Home</div>,
-  '/about': () => <div>About</div>,
-  '/posts/(?<id>.*)': ({id}) => <div>Post: {id}</div>,
-  '/calendar/(?<year>.*)/(?<month>.*)': ({year, month}) => <div>Calendar: {year} {month}</div>,
-  '/not-found': () => <div>Not Found!</div>,
-}
-
 export function matchLocationToView(location: string): React.ReactElement {
-  const [path, params] = matchLocationToPath(location)
-  return routerConfig[path](params)
+  const p = matchLocationToPath(location)
+  switch(p.path) {
+    case '/':
+      return <div>Home</div>
+    case '/about':
+      return <div>About</div>
+    case '/not-found':
+      return <div>Not Found!</div>
+    case '/calendar/(?<year>.*)/(?<month>.*)':
+      return <div>Calendar: {p.params.year} {p.params.month}</div>
+    case '/posts/(?<id>.*)':
+      return <div>Post: {p.params.id}</div>
+    default:
+      assertNever(p)
+  }
 }
 
 export const Router = ({
