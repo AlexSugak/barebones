@@ -32,10 +32,8 @@ type DistributeParams<P> = P extends Path ? {path: P, params: PathParams<P>} : n
 export type PathWithParams = DistributeParams<Path>
 
 export function matchLocationToPath(location: string): PathWithParams {
-  console.log('new location', location)
   const exact = PATHS.filter(isStaticPath).find(p => p === location)
   if (exact) {
-    console.log('exact match', {location, exact})
     return { path: exact, params: {} }
   }
 
@@ -44,7 +42,6 @@ export function matchLocationToPath(location: string): PathWithParams {
                     .map(path => ({path, match: location.match(new RegExp(path))}))
                     .find(r => r.match !== null)
   if (regMatch){
-    console.log('reg match', {location, regMatch})
     // TODO: check if groups match path params
     // see https://github.com/microsoft/TypeScript/issues/32098
     const params = regMatch.match.groups as any
@@ -52,4 +49,19 @@ export function matchLocationToPath(location: string): PathWithParams {
   }
 
   return {path: '/not-found', params: {}}
+}
+
+export function generatePathUrl<P extends Path>(
+  path: P,
+  params: PathParams<P>): string {
+  if (isStaticPath(path)) {
+    return path
+  }
+
+  let url = path.toString()
+  Object.keys(params).forEach(key => {
+    url = url.replace(`(?<${key}>.*)`, params[key])
+  })
+
+  return url
 }

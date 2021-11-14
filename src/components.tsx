@@ -61,8 +61,12 @@ const Clock = await hotImport('./clock.js', m => m.Clock as ClockType)
 import { RouterType } from './router.js'
 const Router = await hotImport('./router.js', m => m.Router as RouterType)
 
+import { LinkType } from './router.js'
+const Link = await hotImport('./router.js', m => m.Link as LinkType)
+
 // TODO: do not make components hot if not isDev
 export {
   Clock,
-  Router
+  Router,
+  Link
 }

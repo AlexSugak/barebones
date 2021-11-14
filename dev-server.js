@@ -8,9 +8,13 @@ const distDir = './dist/js'
 
 const files = {}
 
-app.get('/', (req, res) => {
-  res.send('Bare Bones dev server')
-})
+
+var path = __dirname + '/dist';
+
+app.use(express.static(path));
+app.get('*', function(req, res) {
+    res.sendFile(path + '/index.html');
+});
 
 function checkFiles() {
   fs.readdirSync(distDir)

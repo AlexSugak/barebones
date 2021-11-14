@@ -1,8 +1,8 @@
 import { getState as getClockState } from './clock.js'
-import { Clock, Router } from './components.js'
+import { Clock, Link, Router } from './components.js'
 import { React } from './react.js'
 import { BehaviorSubject } from './rx.js'
-import { RouterState, matchLocationToView } from './router.js'
+import { RouterState, matchLocationToView, LinkParams } from './router.js'
 
 const clockState = getClockState()
 const clockStateMemo = new BehaviorSubject<number>(0)
@@ -12,29 +12,33 @@ const routerState = new RouterState()
 
 export const App = ({}) => {
   
+  const navigate = (url: string) => routerState.navigate(url)
+  
+  const NLink = 
+    (params: Omit<LinkParams, 'navigate'>) => 
+      <Link {...{...params, navigate}} />
+
   return (<>
     <div>Bare Bones react+ts app</div>
     <Clock state={clockStateMemo} />
-    {/* TODO: strongly typed Links */}
-    <a href="#" onClick={e => {
-      e.preventDefault()
-      routerState.navigate('/')
-    }}>Home</a>
+    <Link 
+      route={{path: '/', params: {}}} 
+      label="Home"
+      navigate={navigate} />
     <br/>
-    <a href="#" onClick={e => {
-      e.preventDefault()
-      routerState.navigate('/posts/1')
-    }}>Post 1</a>
+    <NLink 
+      route={{path: '/posts/(?<id>.*)', params: { id: '1' }}} 
+      label="Post 1" />
     <br/>
-    <a href="#" onClick={e => {
-      e.preventDefault()
-      routerState.navigate('/posts/2')
-    }}>Post 2</a>
+    <NLink 
+      route={{path: '/posts/(?<id>.*)', params: { id: '2' }}} 
+      label="Post 2" />
     <br/>
-    <a href="#" onClick={e => {
-      e.preventDefault()
-      routerState.navigate('/calendar/2021/11')
-    }}>Today</a>
+    <NLink 
+      route={{
+        path: '/calendar/(?<year>.*)/(?<month>.*)', 
+        params: { year: '2021', month: '11' }}} 
+      label="Today" />
     <br/>
     <Router location={routerState.location} match={matchLocationToView} />
   </>)

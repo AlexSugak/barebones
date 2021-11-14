@@ -21,7 +21,7 @@ build: ## builds the app source code
 
 serve: ## serves the app from local server
 	##  | awk '/Available on/ { system("open http://localhost:8080") }'
-	cd dist && http-server . -c-1
+	cd dist && http-server . -c-1 -P http://localhost:8080?
 
 define APPLE_SCRIPT_RELOAD
 	tell application "Google Chrome"
@@ -60,7 +60,7 @@ dev-server: ## starts dev server
 watch-hot:
 	tsc-watch --onSuccess "curl -X POST http://localhost:3000/compileSuccess"
 
-dev-hot: serve dev-server watch-hot ## !!!Important run with -j3 option!!! Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
+dev-hot: dev-server watch-hot ## !!!Important run with -j2 option!!! Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
 
 test: ## runs all tests
 	@ts-node ./tests.ts
