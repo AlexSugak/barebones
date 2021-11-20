@@ -1,6 +1,6 @@
-import { React } from './react.js'
-import { equals } from './eq.js'
-import { map, Observable, Subscription } from './rx.js'
+import { React } from './react'
+import { equals } from './eq'
+import { map, Observable, Subscription } from './rx'
 
 export interface ObservableNodeProps {
   children?: Observable<React.ReactNode>

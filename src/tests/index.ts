@@ -1,8 +1,8 @@
-import { FailureResult, runSpec, SpecificationResult, SuccessResult } from './src/spec'
-import { Colors, coloredLog } from './src/output'
-import { allWorksSpec } from './src/tests/works.spec'
-import { specs as specSpecs } from './src/tests/spec.spec'
-import { specs as routerSpecs } from './src/tests/navigation.spec'
+import { FailureResult, runSpec, SpecificationResult, SuccessResult } from '../spec'
+import { Colors, coloredLog } from '../output'
+import { allWorksSpec } from '../tests/works.spec'
+import { specs as specSpecs } from '../tests/spec.spec'
+import { specs as routerSpecs } from '../tests/router.spec'
 
 const specs = [
   allWorksSpec,

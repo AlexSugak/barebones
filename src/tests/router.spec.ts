@@ -1,4 +1,4 @@
-import { generatePathUrl, matchLocationToPath, Path } from "../navigation"
+import { generatePathUrl, matchLocationToPath, Path } from "../router"
 import { Expect, test, spec } from '../spec'
 
 export const specs = [

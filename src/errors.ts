@@ -6,7 +6,6 @@ export const CustomError = (function (this: Error, message = '(nomessage)') {
 
   // better stack trace for V8 engine (Chrome + NodeJS)
   if ('captureStackTrace' in Error) {
-    // @ts-expect-error
     Error.captureStackTrace(this, this.constructor)
   } else {
     this.stack = new Error().stack

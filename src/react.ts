@@ -1,1 +1,1 @@
-export { React, ReactDOM } from 'https://unpkg.com/es-react/dev'
+export { React, ReactDOM } from 'lib/react'

@@ -1,6 +1,6 @@
-import { View } from './hoc.js'
-import { React } from './react.js'
-import { interval, map, Observable, startWith } from './rx.js'
+import { View } from './hoc'
+import { React } from './react'
+import { interval, map, Observable, startWith } from './rx'
 
 export type State = Observable<number>
 

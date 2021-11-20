@@ -1,26 +1,30 @@
-const express = require('express')
-const ws = require('ws')
-const fs = require('fs')
+import express from 'express'
+import { WebSocketServer } from 'ws';
+import fs from 'fs'
+import { dirname } from 'path'
+import { fileURLToPath } from 'url';
 
 const app = express()
 const port = 3000
-const distDir = './dist/js'
+const jsDir = './dist/js'
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const distDir = __dirname + '/dist';
 
 const files = {}
 
-
-var path = __dirname + '/dist';
-
-app.use(express.static(path));
+app.use(express.static(distDir));
 app.get('*', function(req, res) {
-    res.sendFile(path + '/index.html');
+    res.sendFile(distDir + '/index.html');
 });
 
 function checkFiles() {
-  fs.readdirSync(distDir)
+  fs.readdirSync(jsDir)
     .filter(fn => fn.endsWith('.js'))
     .map(file => {
-      const path = `${distDir}/${file}`
+      const path = `${jsDir}/${file}`
       const stat = fs.statSync(path)
       return [file, stat.mtime.getTime()]
     })
@@ -48,7 +52,7 @@ const server = app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 })
 
-const wss = new ws.Server({
+const wss = new WebSocketServer({
   noServer: true,
   path: "/ws",
 })

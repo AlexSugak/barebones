@@ -3,25 +3,35 @@
 
 deps: ## installs dependencies
 	npm install -g typescript
-	npm install -g ts-node
-	npm install -g http-server
 	npm install -g tsc-watch
-	npm install -g express
-	npm install -g ws
 
 clean: ## cleans app build artifacts
 	@echo 'cleaning up dist'
 	rm -rf './dist/js'
 	@echo 'done'
 
-build: ## builds the app source code
-	@echo 'build start'
+compile: ## compiles the app source code
+	@echo 'compile start'
 	time tsc
 	@echo 'done'
 
-serve: ## serves the app from local server
-	##  | awk '/Available on/ { system("open http://localhost:8080") }'
-	cd dist && http-server . -c-1 -P http://localhost:8080?
+add-js: ## replaces "import from './module'" -> "import from './module.js'" \
+				and         "Import('./module')" -> "Import('./module.js')" \
+				as tsc won't do this when compiling to esnext \
+				see https://github.com/microsoft/TypeScript/issues/27287
+	@find ./dist/js -type f -name '*.js' -exec sed -E -i '' '/.*\.js.*/! s/.*[from |Import\(|import\(]['\''"]\.{1,2}(\/[\.a-z]*)+/&\.js/g' {} \;
+
+copy-lib: ## copies lib folder to output
+	@cp -R ./lib ./dist/js/ 
+
+replace-ts-paths: ## replaces all imports of ts paths with corresponding paths to physical files
+	@node ./scripts/replaceTsPaths.js
+
+post-process: add-js replace-ts-paths copy-lib ## processes build output files
+
+build: clean compile post-process ## builds the app
+
+serve: dev-server ## serves the app from local server
 
 define APPLE_SCRIPT_RELOAD
 	tell application "Google Chrome"
@@ -63,11 +73,11 @@ watch-hot:
 dev-hot: dev-server watch-hot ## !!!Important run with -j2 option!!! Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
 
 test: ## runs all tests
-	@ts-node ./tests.ts
+	@node ./dist/js/tests/index.js
 
+process-test: post-process test
 test-watch: ## runs all tests every time a file under ./src changes
-	@make test
-	@fswatch -or ./ | xargs -n1 -I {} sh -c 'clear && make test'  
+	@tsc-watch --onSuccess "make process-test" 
 
 all: deps clean build serve ## builds the app and opens it in browser
 

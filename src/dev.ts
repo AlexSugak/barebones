@@ -1,4 +1,4 @@
-import { filter, map, Observable, Subject } from "./rx.js"
+import { filter, map, Observable, Subject } from "./rx"
 
 type FileUpdatedEvent = {
   fileName: string 

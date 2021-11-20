@@ -1,7 +1,7 @@
-import { React } from './react.js'
-import { BehaviorSubject } from './rx.js'
-import { View } from './hoc.js'
-import { getDevServerMessages, getSourceFilesUpdates } from './dev.js'
+import { React } from './react'
+import { BehaviorSubject } from './rx'
+import { View } from './hoc'
+import { getDevServerMessages, getSourceFilesUpdates } from './dev'
 
 const isDev = true
 const modules: Map<string, () => void> = new Map()
@@ -55,14 +55,14 @@ const hotImport = async <P extends object>(module: string, m: (module: any) => C
   await cook(module, m)
 
 // TODO: make this type-safe
-import { ClockType } from './clock.js'
-const Clock = await hotImport('./clock.js', m => m.Clock as ClockType)
+import { ClockType } from './clock'
+const Clock = await hotImport('./clock', m => m.Clock as ClockType)
 
-import { RouterType } from './router.js'
-const Router = await hotImport('./router.js', m => m.Router as RouterType)
+import { RouterType } from './router'
+const Router = await hotImport('./router', m => m.Router as RouterType)
 
-import { LinkType } from './router.js'
-const Link = await hotImport('./router.js', m => m.Link as LinkType)
+import { LinkType } from './router'
+const Link = await hotImport('./router', m => m.Link as LinkType)
 
 // TODO: do not make components hot if not isDev
 export {

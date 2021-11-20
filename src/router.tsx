@@ -1,8 +1,7 @@
-import { React } from './react.js'
-import { View } from './hoc.js'
-import { Observable, map, BehaviorSubject } from './rx.js'
-import { generatePathUrl, matchLocationToPath, PathWithParams } from './navigation.js'
-import { assertNever } from './errors.js'
+import { React } from './react'
+import { View } from './hoc'
+import { Observable, map, BehaviorSubject } from './rx'
+import { assertNever } from './errors'
 
 /**
  * Router
@@ -14,7 +13,55 @@ import { assertNever } from './errors.js'
  * - [+] <Link /> onclick => window.location => ... => rendering <About />
  */
 
- export class RouterState {
+ export const PATHS = [
+  '/',
+  '/about',
+  '/posts/(?<id>.*)',
+  '/calendar/(?<year>.*)/(?<month>.*)',
+  '/not-found'
+] as const;
+
+type ExtractPathParams<T> = string extends T
+    ? Record<string, string>
+    : T extends `${infer _Start}(?<${infer Param}>.*)/${infer Rest}`
+    ? { [k in Param | keyof ExtractPathParams<Rest>]: string }
+    : T extends `${infer _Start}(?<${infer Param}>.*)`
+    ? { [k in Param]: string }
+    : {}
+export type Path = (typeof PATHS)[number]
+export type PathParams<P extends Path> = ExtractPathParams<P>
+
+type ExtractStaticPaths<T> = string extends T ? T : T extends `${infer _Start}(?<${infer _End}` ? never : T
+export type StaticPath = ExtractStaticPaths<Path>
+export function isStaticPath(p: Path): p is StaticPath {
+  return !p.includes('(?<')
+}
+
+type ExtractDynamicPaths<T> = string extends T ? T : T extends `${infer _Start}(?<${infer _End}` ? T : never
+export type DynamicPath = ExtractDynamicPaths<Path>
+export function isDynamicPath(p: Path): p is DynamicPath {
+  return !isStaticPath(p)
+}
+
+type DistributeParams<P> = P extends Path ? {path: P, params: PathParams<P>} : never
+export type PathWithParams = DistributeParams<Path>
+
+export function generatePathUrl<P extends Path>(
+  path: P,
+  params: PathParams<P>): string {
+  if (isStaticPath(path)) {
+    return path
+  }
+
+  let url = path.toString()
+  Object.keys(params).forEach(key => {
+    url = url.replace(`(?<${key}>.*)`, params[key])
+  })
+
+  return url
+}
+
+export class RouterState {
   private _location: BehaviorSubject<string> = 
     new BehaviorSubject<string>(document.location.pathname)
 
@@ -32,6 +79,26 @@ import { assertNever } from './errors.js'
     history.pushState({}, '', to)
     this._location.next(to)
   }
+}
+
+export function matchLocationToPath(location: string): PathWithParams {
+  const exact = PATHS.filter(isStaticPath).find(p => p === location)
+  if (exact) {
+    return { path: exact, params: {} }
+  }
+
+  const regMatch = PATHS
+                    .filter(isDynamicPath)
+                    .map(path => ({path, match: location.match(new RegExp(path))}))
+                    .find(r => r.match !== null)
+  if (regMatch){
+    // TODO: check if groups match path params
+    // see https://github.com/microsoft/TypeScript/issues/32098
+    const params = regMatch.match.groups as any
+    return {path: regMatch.path, params }
+  }
+
+  return {path: '/not-found', params: {}}
 }
 
 export function matchLocationToView(location: string): React.ReactElement {
