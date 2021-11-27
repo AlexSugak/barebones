@@ -15,7 +15,7 @@ The constraints for this repo are:
 - no webpack
 - no babel
 - use Makefile and hand-written scripts to automate things
-- no npm/yarn for dependencies (at least for now, let's see how far I can go without it)
+- ~~no npm/yarn for dependencies (at least for now, let's see how far I can go without it)~~ use npm/yarn for few dev dependencies only
 - use static local/CDN scripts
 - use TS for type-safety
 - use React for rendering the View of the app
