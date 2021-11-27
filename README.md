@@ -23,6 +23,15 @@ The constraints for this repo are:
 - implement my own state management using Rx.js for async stuff
 - for cross-cutting concerns like routing, logging, testing etc. try and see how far I can go with doing my own implementation from scratch. Only bring in 3rd party dependency if doing my own thing has proven to be too big of an effort. 
 
+### Current list of dependencies:
+- ReactJS (as esm module)
+- Rx.js (as esm module)
+- TypeScript
+- Tailwindcss
+- Express (for dev server and back-end)
+- ws (for hot module reloading)
+
+
 ## Getting started
 
 Clone the repo and run `make help` from its root, it should list the commands for automating build and other tasks. Try running `make all`.
