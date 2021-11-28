@@ -2,6 +2,8 @@ import { React } from './react'
 import { View } from './hoc'
 import { Observable, map, BehaviorSubject } from './rx'
 import { assertNever } from './errors'
+import { Login } from './components'
+import { LoginProps } from './auth'
 
 /**
  * Router
@@ -18,7 +20,9 @@ import { assertNever } from './errors'
   '/about',
   '/posts/(?<id>.*)',
   '/calendar/(?<year>.*)/(?<month>.*)',
-  '/not-found'
+  '/not-found',
+  '/admin',
+  '/login'
 ] as const;
 
 type ExtractPathParams<T> = string extends T
@@ -79,6 +83,14 @@ export class RouterState {
     history.pushState({}, '', to)
     this._location.next(to)
   }
+
+  navigateTo<P extends Path>(
+    path: P,
+    params: PathParams<P>) {
+    const url = generatePathUrl(path, params)
+
+    this.navigate(url)
+  }
 }
 
 export function matchLocationToPath(location: string): PathWithParams {
@@ -101,21 +113,43 @@ export function matchLocationToPath(location: string): PathWithParams {
   return {path: '/not-found', params: {}}
 }
 
-export function matchLocationToView(location: string): React.ReactElement {
-  const p = matchLocationToPath(location)
-  switch(p.path) {
-    case '/':
-      return <div>Home</div>
-    case '/about':
-      return <div>About</div>
-    case '/not-found':
-      return <div>Not Found!</div>
-    case '/calendar/(?<year>.*)/(?<month>.*)':
-      return <div>Calendar: {p.params.year} {p.params.month}</div>
-    case '/posts/(?<id>.*)':
-      return <div>Post: {p.params.id}</div>
-    default:
-      assertNever(p)
+
+export type MathLocation = (location: string) => React.ReactElement
+
+export const restrictAnonymous: (inner: MathLocation, isLoggedIn: () => boolean) 
+  => MathLocation = (inner, isLoggedIn) => location => {
+  
+  if (!isLoggedIn() && location === '/admin') {
+    // TODO: find a better way to say what should be rendered
+    // TODO: we should do a redirect instead
+    // TODO: have a black list of urls to block anonymous users from 
+    // TODO: return user to the target location after successful login
+    return inner('/login')
+  }
+  return inner(location)
+}
+
+export function matchLocationToView(onLogin: LoginProps['onLogin']): MathLocation {
+  return location => {
+    const p = matchLocationToPath(location)
+    switch(p.path) {
+      case '/':
+        return <div>Home</div>
+      case '/about':
+        return <div>About</div>
+      case '/not-found':
+        return <div>Not Found!</div>
+      case '/calendar/(?<year>.*)/(?<month>.*)':
+        return <div>Calendar: {p.params.year} {p.params.month}</div>
+      case '/posts/(?<id>.*)':
+        return <div>Post: {p.params.id}</div>
+      case '/login':
+        return <Login onLogin={onLogin} />
+      case '/admin':
+        return <div>Admin panel</div>
+      default:
+        assertNever(p)
+    }
   }
 }
 

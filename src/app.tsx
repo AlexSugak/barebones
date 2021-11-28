@@ -1,45 +1,32 @@
-import { getState as getClockState } from './clock'
-import { Clock, Link, Router } from './components'
+import { Router } from './components'
 import { React } from './react'
-import { BehaviorSubject } from './rx'
-import { RouterState, matchLocationToView, LinkParams } from './router'
+import { RouterState, matchLocationToView, restrictAnonymous } from './router'
+import { User } from './auth'
+import { first } from './rx'
 
-const clockState = getClockState()
-const clockStateMemo = new BehaviorSubject<number>(0)
-clockState.subscribe(clockStateMemo)
+const router = new RouterState()
+const user = new User.UserManager()
 
-const routerState = new RouterState()
+const login = (userName: string, password: string) => {
+  user.login(userName, password).pipe(
+    first(u => u.kind === 'registered')
+    // TODO: dispose the subscription
+  ).subscribe(u => {
+    router.navigateTo('/', {})
+  })
+}
 
 export const App = ({}) => {
   
-  const navigate = (url: string) => routerState.navigate(url)
+  const navigate = (url: string) => router.navigate(url)
   
-  const NavLink = 
-    (params: Omit<LinkParams, 'navigate'>) => 
-      <Link {...{...params, navigate}} />
+  // const NavLink = 
+  //   (params: Omit<LinkParams, 'navigate'>) => 
+  //     <Link {...{...params, navigate}} />
+
+  const matchLocation = restrictAnonymous(matchLocationToView(login), () => user.isLoggedIn())
 
   return (<>
-    <div>Bare Bones react+ts app</div>
-    <Clock state={clockStateMemo} />
-    <Link 
-      route={{path: '/', params: {}}} 
-      label="Home"
-      navigate={navigate} />
-    <br/> 
-    <NavLink 
-      route={{path: '/posts/(?<id>.*)', params: { id: '1' }}} 
-      label="Post 1" />
-    <br/>
-    <NavLink 
-      route={{path: '/posts/(?<id>.*)', params: { id: '2' }}} 
-      label="Post 2" />
-    <br/>
-    <NavLink 
-      route={{
-        path: '/calendar/(?<year>.*)/(?<month>.*)', 
-        params: { year: '2021', month: '11' }}} 
-      label="Today" />
-    <br/>
-    <Router location={routerState.location} match={matchLocationToView} />
+    <Router location={router.location} match={matchLocation} />
   </>)
 }
