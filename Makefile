@@ -2,8 +2,6 @@
 .PHONY: deps clean compile build add-js replace-ts-paths post-process watch-hot dev-hot dev-server test test-watch all 
 
 deps: ## installs dependencies
-	npm install -g typescript
-	npm install -g tsc-watch
 	yarn --frozen-lockfile
 
 clean: ## cleans app build artifacts
@@ -13,7 +11,7 @@ clean: ## cleans app build artifacts
 
 compile: ## compiles the app source code
 	@echo 'compile start'
-	time tsc
+	time ./node_modules/.bin/tsc
 	@echo 'done'
 
 copy-lib: ## copies lib folder to output
@@ -40,16 +38,16 @@ dev-server: ## starts dev server
 process-notify: post-process
 	curl -X POST http://localhost:3000/compileSuccess
 watch-hot: build
-	tsc-watch --onSuccess "$(MAKE) process-notify"
+	./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-notify"
 
 dev-hot: dev-server watch-hot ## !!!Important run with -j2 option!!! Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
 
 test: ## runs all tests
-	@node ./dist/js/tests/index.js
+	@NODE_PATH=${NODE_PATH} node --experimental-top-level-await ./dist/js/tests/index.js
 
 process-test: post-process test
 test-watch: ## runs all tests every time a file under ./src changes
-	@tsc-watch --onSuccess "$(MAKE) process-test" 
+	@./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-test" 
 
 all: deps build dev-server ## builds the app and opens it in browser
 

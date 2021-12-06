@@ -3,6 +3,7 @@ import { WebSocketServer } from 'ws';
 import fs from 'fs'
 import { dirname } from 'path'
 import { fileURLToPath } from 'url';
+import { init as initAPI } from './dist/js/server.js'
 
 const app = express()
 const port = 3000
@@ -15,6 +16,7 @@ const distDir = __dirname + '/dist';
 
 const files = {}
 
+initAPI(app)
 app.use(express.static(distDir));
 app.get('*', function(req, res) {
     res.sendFile(distDir + '/index.html');

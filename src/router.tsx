@@ -2,8 +2,6 @@ import { React } from './react'
 import { View } from './hoc'
 import { Observable, map, BehaviorSubject } from './rx'
 import { assertNever } from './errors'
-import { Login } from './components'
-import { LoginProps } from './auth'
 
 /**
  * Router
@@ -129,7 +127,11 @@ export const restrictAnonymous: (inner: MathLocation, isLoggedIn: () => boolean)
   return inner(location)
 }
 
-export function matchLocationToView(onLogin: LoginProps['onLogin']): MathLocation {
+export interface Views {
+  login: () => React.ReactElement
+}
+
+export function matchLocationToView(views: Views): MathLocation {
   return location => {
     const p = matchLocationToPath(location)
     switch(p.path) {
@@ -144,7 +146,7 @@ export function matchLocationToView(onLogin: LoginProps['onLogin']): MathLocatio
       case '/posts/(?<id>.*)':
         return <div>Post: {p.params.id}</div>
       case '/login':
-        return <Login onLogin={onLogin} />
+        return views.login()
       case '/admin':
         return <div>Admin panel</div>
       default:

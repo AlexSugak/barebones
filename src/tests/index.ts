@@ -3,11 +3,13 @@ import { Colors, coloredLog } from '../output'
 import { allWorksSpec } from '../tests/works.spec'
 import { specs as specSpecs } from '../tests/spec.spec'
 import { specs as routerSpecs } from '../tests/router.spec'
+import { specs as serverSpecs } from '../tests/server.spec'
 
 const specs = [
   allWorksSpec,
   ...specSpecs,
-  ...routerSpecs
+  ...routerSpecs,
+  ...serverSpecs
 ]
 
 const greenLog = coloredLog(Colors.FgGreen)
