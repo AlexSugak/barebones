@@ -43,8 +43,7 @@ export namespace User {
       return this._state
     }
   }
-}
-
+} 
 
 type ActionKind = 'updateLogin' | 'updatePassword' | 'submit'
 

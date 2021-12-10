@@ -6,7 +6,7 @@ deps: ## installs dependencies
 
 clean: ## cleans app build artifacts
 	@echo 'cleaning up dist'
-	rm -rf './dist/js'
+	@rm -rf './dist/js'
 	@echo 'done'
 
 compile: ## compiles the app source code
@@ -19,7 +19,7 @@ copy-lib: ## copies lib folder to output
 
 add-js: ## replaces "import from './module'" -> "import from './module.js'" \
 				and         "Import('./module')" -> "Import('./module.js')" \
-				as tsc won't do this when compiling to esnext \
+				as tsc won\'t do this when compiling to esnext \
 				see https://github.com/microsoft/TypeScript/issues/27287
 	@node ./scripts/fixJSPaths.js
 
@@ -33,7 +33,7 @@ build: clean compile copy-lib post-process ## builds the app
 NODE_PATH=$(shell npm root -g)
 
 dev-server: ## starts dev server
-	NODE_PATH=${NODE_PATH} node dev-server.js
+	NODE_PATH=${NODE_PATH} node --experimental-top-level-await dev-server.js
 
 process-notify: post-process
 	curl -X POST http://localhost:3000/compileSuccess

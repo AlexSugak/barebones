@@ -17,9 +17,15 @@ const redLog = coloredLog(Colors.FgRed)
 
 console.log('Running all tests...')
 
-const results: SpecificationResult[] = specs.flatMap(s => runSpec(s))
+const results: SpecificationResult[] = 
+  (await Promise.all(specs.map(s => runSpec(s))))
+  .flatMap(r => r)
 const successTests: SuccessResult[] = results.filter(SpecificationResult.isSuccessResult)
 const failureTests: FailureResult[] = results.filter(SpecificationResult.isFailureResult)
+
+// successTests.forEach(ft => {
+//   greenLog(`${ft.specName} -> OK`)
+// })
 
 failureTests.forEach(ft => {
   redLog(`${ft.specName} -> ${ft.errors.join(', ')}`)

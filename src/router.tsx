@@ -21,7 +21,7 @@ import { assertNever } from './errors'
   '/not-found',
   '/admin',
   '/login'
-] as const;
+] as const
 
 type ExtractPathParams<T> = string extends T
     ? Record<string, string>

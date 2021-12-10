@@ -2,7 +2,7 @@ import { Specification, SpecificationTest } from '../spec'
 
 const testsWork: SpecificationTest = {
   name: 'tests work',
-  test: () => {
+  body: () => {
     return true
   }
 }

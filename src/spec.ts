@@ -1,7 +1,9 @@
 import { equals as structEq } from './eq'
 
 type boolFunc = () => boolean
-type anyFunc = () => any
+type voidFunc = () => void
+type asyncFunc = () => Promise<any>
+type testFunc = boolFunc | voidFunc | asyncFunc
 
 export namespace Expect {
   export function equals<T>(
@@ -22,20 +24,13 @@ export namespace Expect {
 
 export interface SpecificationTest {
   name: string,
-  test: boolFunc
+  body: testFunc
 }
 
-export function test(name: string, body: anyFunc): SpecificationTest {
+export function test(name: string, body: testFunc): SpecificationTest {
   return {
     name,
-    test: () => { 
-      const res = body(); 
-      if (res !== undefined) {
-        return Boolean(res)
-      } else {
-        return true 
-      }
-    }
+    body
   }
 } 
 
@@ -79,23 +74,32 @@ export namespace SpecificationResult {
   }
 }
 
-export function runSpec(spec: Specification): SpecificationResult[] {
+export async function runSpec(spec: Specification): Promise<SpecificationResult[]> {
   const results: SpecificationResult[] = []
-  spec.tests.forEach(tst => {
-    try{
-      if (tst.test()) {
-        results.push({kind: 'Success', specName: spec.name})
+  for (let i = 0; i < spec.tests.length; i++) {
+    const t = spec.tests[i];
+    
+    try {
+      let error = null
+      const testRes = await t.body()
+      let result = true
+      if (testRes !== undefined) {
+        result = Boolean(testRes)
+      } 
+      
+      if (result && error === null) {
+        results.push({kind: 'Success', specName: `${spec.name}: ${t.name}`})
       } else {
         results.push({
           kind: 'Failure', 
-          specName: `${spec.name}: ${tst.name}`, 
-          errors: ['expected spec to return true but got false']
+          specName: `${spec.name}: ${t.name}`, 
+          errors: [error || 'expected spec to return true but got false']
         })
       }
     } catch(e) {
-      results.push({kind: 'Failure', specName: `${spec.name}: ${tst.name}`, errors: [e.toString()]})
+      results.push({kind: 'Failure', specName: `${spec.name}: ${t.name}`, errors: [e.toString()]})
     }
-  })
+  }
 
   return results
 }
