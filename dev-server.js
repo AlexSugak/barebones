@@ -3,6 +3,7 @@ import { WebSocketServer } from 'ws';
 import fs from 'fs'
 import { dirname } from 'path'
 import { fileURLToPath } from 'url';
+import { getFilesRecursive } from './scripts/common.js'
 
 const app = express()
 const port = 3000
@@ -13,18 +14,44 @@ const __dirname = dirname(__filename);
 
 const distDir = __dirname + '/dist';
 
-const files = {}
+const doNothing = () => {}
+const importNoCache = (module) => {
+  const seed = (new Date()).getMilliseconds().toString()
+  return import(`${module}?seed=${seed}`)
+}
 
 // we cannot load api config immediately here
 // as the initial app compilation may still be in progress
 // e.g. when starting the dev server for the first time
-function reloadAPIServer() {
-  const seed = (new Date()).getMilliseconds().toString()
-  import(`./dist/js/server.js?seed=${seed}`).catch(e => {
-    console.log('failed to load dist/js/server.js module')
-    return { init: () => {} }
-  }).then(m => m.init).then(
-    initAPI => {
+async function reloadAPIServer() {
+  const jsFiles = await getFilesRecursive(jsDir, {ignore: ['lib']})
+  // XXX: convention: all server files should end with 'server.js'
+  // e.g. auth-server.js
+  const serverFiles = jsFiles.filter(fn => fn.endsWith('server.js'))
+
+  Promise.all(
+    // reloading only /server.js will not work
+    // as it will not update the modules referenced in it
+    // so we need to reload all the /server.js dependencies here manually
+    serverFiles
+      .filter(f => !f.includes('/server.js'))
+      .map(f => {
+        const modulePath = `./dist${f.replace(distDir, '')}`
+        return importNoCache(modulePath)
+                .then(m => {
+                  console.log('reloaded', modulePath)
+                  return m
+                })
+                .catch(e => console.error('failed to load module: ' + modulePath, e))
+      })
+  )
+  .then(ms => {
+    return ms.map(m => m.init || doNothing)
+  })
+  .then(inits => importNoCache(`./dist/js/server.js`).then(m => [m.init, inits]))
+  .catch(e => console.error('failed to load server.js module', e))
+  .then(
+    ([initAPI, endpointInits]) => {
       console.log('reloading api server')
       
       const doNotDelete = [
@@ -34,11 +61,12 @@ function reloadAPIServer() {
       app._router.stack = app._router.stack.filter(l => doNotDelete.includes(l.name))
       // api endpoints must go first
       // before the "serve static" wildcard endpoint added in reloadDevApi  
-      initAPI(app)
+      initAPI(app, endpointInits)
       reloadDevApi()
       // console.log(app._router)
     }
   )
+  .catch(e => console.error('error reloading api server', e))
 }
 
 function reloadDevApi() {
@@ -55,14 +83,14 @@ function reloadDevApi() {
 
 reloadDevApi()
 
-function checkFiles() {
+const files = {}
+async function checkFiles() {
+  const jsFiles = await getFilesRecursive(jsDir, {ignore: ['lib']})
 
-  // TODO: getFilesRecursive
-  const updatedFiles = fs.readdirSync(jsDir)
+  const updatedFiles = jsFiles
     .filter(fn => fn.endsWith('.js'))
     .filter(file => {
-      const path = `${jsDir}/${file}`
-      const stat = fs.statSync(path)
+      const stat = fs.statSync(file)
       const lastModified = files[file] || 0
       const time = stat.mtime.getTime()
       // side effect ????
@@ -72,14 +100,17 @@ function checkFiles() {
 
   updatedFiles
     .forEach(file => {
-      console.log('file updated', file)
+      const fileName = file.replace(distDir, '')
+      console.log('file updated', fileName)
       wss.clients.forEach(c => {
-        c.send('updated ' + file)
+        c.send('updated ' + fileName)
       })
     })
 
-  if (updatedFiles.filter(f => f.includes('server.js'))) {
-    reloadAPIServer()
+  const serverFiles = updatedFiles.filter(f => f.includes('server'))
+
+  if (serverFiles.length > 0) {
+    await reloadAPIServer(serverFiles)
   }
 }
 

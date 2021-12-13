@@ -43,9 +43,11 @@ const cook = async <P extends object>(module: string, component: (module: any) =
 if (isDev) {
   const fileUpdates = getSourceFilesUpdates(getDevServerMessages())
   fileUpdates.subscribe(f => {
-    console.info('reloading module: ', f.fileName)
-    const reload = Array.from(modules.entries()).find(([k]) => k.endsWith(f.fileName))
+    const reload = Array.from(modules.entries())
+                        .find(([k]) => f.fileName
+                        .endsWith(k.replace('.\/', '\/')))
     if (reload) {
+      console.info('reloading module: ', reload[0])
       reload[1]()
     }
   })
