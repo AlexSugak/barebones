@@ -64,8 +64,8 @@ const Router = await hotImport('./router', m => m.Router as RouterType)
 import { LinkType } from './router'
 const Link = await hotImport('./router', m => m.Link as LinkType)
 
-import { LoginType } from './auth'
-const Login = await hotImport('./auth', m => m.Login as LoginType)
+import { LoginType } from './auth/auth-view'
+const Login = await hotImport('./auth/auth-view', m => m.Login as LoginType)
 
 import { LayoutType } from './layout'
 const Layout = await hotImport('./layout', m => m.Layout as LayoutType)

@@ -37,6 +37,7 @@ dev-server: ## starts dev server
 
 process-notify: post-process
 	curl -X POST http://localhost:3000/compileSuccess
+	$(MAKE) test
 watch-hot: build
 	./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-notify"
 

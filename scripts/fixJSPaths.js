@@ -24,7 +24,7 @@ import { getFilesRecursive } from './common.js'
         lines.forEach(ln => {
           let res = ln
           if(!ln.match(/.*\.js.*/)) {
-            const importMatch = ln.match(/.*[from |Import\(|import\(]['\''"]\.{1,2}(\/[\.a-z]*)+/)
+            const importMatch = ln.match(/.*[from |Import\(|import\(]['\''"]\.{1,2}(\/[\-\.a-z]*)+/)
             if(importMatch) {
               updated = true
               res = ln.replace(importMatch[0], importMatch[0] + '.js')

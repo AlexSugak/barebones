@@ -15,9 +15,12 @@ const distDir = __dirname + '/dist';
 
 const files = {}
 
+// we cannot load api config immediately here
+// as the initial app compilation may still be in progress
+// e.g. when starting the dev server for the first time
 function reloadAPIServer() {
-  const newSeed = (new Date()).getMilliseconds().toString()
-  import(`./dist/js/server.js?seed=${newSeed}`).catch(e => {
+  const seed = (new Date()).getMilliseconds().toString()
+  import(`./dist/js/server.js?seed=${seed}`).catch(e => {
     console.log('failed to load dist/js/server.js module')
     return { init: () => {} }
   }).then(m => m.init).then(
@@ -29,6 +32,8 @@ function reloadAPIServer() {
       ]
 
       app._router.stack = app._router.stack.filter(l => doNotDelete.includes(l.name))
+      // api endpoints must go first
+      // before the "serve static" wildcard endpoint added in reloadDevApi  
       initAPI(app)
       reloadDevApi()
       // console.log(app._router)
@@ -51,6 +56,8 @@ function reloadDevApi() {
 reloadDevApi()
 
 function checkFiles() {
+
+  // TODO: getFilesRecursive
   const updatedFiles = fs.readdirSync(jsDir)
     .filter(fn => fn.endsWith('.js'))
     .filter(file => {

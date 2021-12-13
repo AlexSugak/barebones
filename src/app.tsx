@@ -1,19 +1,20 @@
 import { Login, Router } from './components'
 import { React } from './react'
 import { RouterState, matchLocationToView, restrictAnonymous, Views } from './router'
-import { User } from './auth'
-import { first } from './rx'
+import { User } from './auth/auth-view'
+import { tap } from './rx'
 
 const router = new RouterState()
 const user = new User.UserManager()
 
 const login = (userName: string, password: string) => {
-  user.login(userName, password).pipe(
-    first(u => u.kind === 'registered')
-    // TODO: dispose the subscription
-  ).subscribe(u => {
-    router.navigateTo('/', {})
-  })
+  return user.login(userName, password).pipe(
+    tap(r => {
+      if (r.kind === 'success') {
+        router.navigateTo('/', {})    
+      }
+    })
+  )
 }
 
 const views: Views = {

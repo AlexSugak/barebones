@@ -5,11 +5,11 @@ import { init } from '../server'
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
-interface Response {
+export interface Response {
   status: number, data: any
 }
 
-function request(options: {
+export function request(options: {
   hostname: string,
   port: number,
   path: string,
@@ -58,17 +58,22 @@ function request(options: {
   })
 }
 
-async function withServer(port: number, 
-    makeRequest: () => Promise<Response>,
+
+// TODO: withDatabase
+
+let _port = 3001
+export async function withServer(
+    makeRequest: (port: number) => Promise<Response>,
     assert: (resp: Response) => void
   ) {
+    _port = _port + 1
   const app = express()
   init(app)
-  const server = app.listen(port)
+  const server = app.listen(_port)
 
   let resp: Response
   try {
-    resp = await makeRequest()
+    resp = await makeRequest(_port)
   } catch(e) {
     console.log('request error', e)
   }
@@ -82,55 +87,14 @@ export const specs = [
     'api server',
     [
       test('works', async () => {
-        const port = 3001
         await withServer(
-          port, 
-          () => request({
+          port => request({
             hostname: 'localhost',
             path: '/api',
             port,
             method: 'GET',
           }),
           resp => Expect.equals({msg: 'OK'}, resp.data)
-        )
-      })
-    ]
-  ),
-  spec(
-    'login api',
-    [
-      test('returns OK on valid credentials', async () => {
-        const port = 3002
-        await withServer(
-          port, 
-          () => request({
-            hostname: 'localhost',
-            path: '/api/login',
-            port,
-            method: 'POST',
-            body: {
-              user: 'alex',
-              password: '123'
-            }
-          }),
-          resp => Expect.equals({msg: 'logged in'}, resp.data)
-        )
-      }),
-      test('returns 401 on invalid credentials', async () => {
-        const port = 3003
-        await withServer(
-          port, 
-          () => request({
-            hostname: 'localhost',
-            path: '/api/login',
-            port,
-            method: 'POST',
-            body: {
-              user: 'alex',
-              password: 'wrong password'
-            }
-          }),
-          resp => Expect.equals(401, resp.status)
         )
       })
     ]

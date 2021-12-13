@@ -1,8 +1,41 @@
-import { React } from './react'
-import { View } from './hoc'
-import { Layout } from './components'
-import { tap, withLatestFrom, BehaviorSubject, map, Observable, Subject } from './rx'
-import { assertNever } from './errors'
+import { React } from '../react'
+import { View } from '../hoc'
+import { Layout } from '../components'
+import { from, tap, EMPTY, withLatestFrom, BehaviorSubject, map, switchMap, Observable, Subject } from '../rx'
+import { assertNever } from '../errors'
+import { LoginRequest, LoginResponse } from './auth-types'
+
+export function loginRequest({user, password}: LoginRequest): Observable<LoginResult> {
+  return from(
+    // TODO: catch request errors (e.g. no connection)
+    fetch('/api/login', {
+      method: 'POST',
+      cache: 'no-cache',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({user, password})
+    })
+    .then(response => response.json().then(body => {
+      console.log('fetch response', {status: response.status, body})
+      return {response, body: body as LoginResponse}
+    }))
+    .then<LoginResult>(({response, body}) => {
+      if (response.ok) {
+        return {
+          kind: 'success',
+          user
+        }
+      }
+
+      return {
+        kind: 'failure',
+        error: body.msg
+      }
+    })
+  )
+}
 
 export namespace User {
   export type UserKind = 'anonymous' | 'registered'
@@ -35,12 +68,19 @@ export namespace User {
       return this._state.getValue().kind === 'registered'
     }
 
-    login(userName: string, password: string): Observable<User> {
-      if (userName === 'alex' && password === '123') {
-        this._state.next({kind: 'registered', name: 'alex'})
-      }
+    get userName(): string {
+      const state = this._state.getValue()
+      return state.kind === 'registered' ? state.name : ''
+    }
 
-      return this._state
+    login(user: string, password: string): Observable<LoginResult> {
+      return loginRequest({user, password}).pipe(
+        tap(res => {
+          if (res.kind === 'success') {
+            this._state.next({kind: 'registered', name: res.user})
+          }
+        })
+      )
     }
   }
 } 
@@ -65,15 +105,16 @@ interface Submit extends LoginFormAction {
   kind: 'submit'
 }
 
-
 interface LoginFormState {
   login: string
   password: string
   errors: string[]
+  isSubmitted: boolean
 }
 type AllActions = UpdateLogin | UpdatePassword | Submit
 export type Actions = Subject<AllActions>
-export const initialState: LoginFormState = { login: '', password: '', errors: [] }
+export const initialState: LoginFormState = { login: '', password: '', errors: [], isSubmitted: false }
+
 export class LoginFormStateManager {
   private _state: BehaviorSubject<LoginFormState> = 
     new BehaviorSubject(initialState)
@@ -95,15 +136,28 @@ export class LoginFormStateManager {
             if (s.password === '') {
               return {...s, errors: ['password required!']}
             }
-
-            // TODO: uncouple this
-            onLogin(s.login, s.password)
-            return {...s, errors: []}
+            return {...s, isSubmitted: true, errors: []}
           default:
             assertNever(a)
         }
       }),
-      tap(s => this._state.next(s))
+      tap(s => this._state.next(s)),
+      switchMap(s => {
+        if (!s.isSubmitted) {
+          return EMPTY
+        }
+
+        return onLogin(s.login, s.password)
+      }),
+      tap(loginResult => {
+        console.log('login result', loginResult)
+        const currentState = this._state.value
+        this._state.next({
+          ...currentState, 
+          isSubmitted: false, 
+          errors: loginResult.kind === 'failure' ? [loginResult.error] : []
+        })
+      }),
       // TODO: make this disposable !!!!
     ).subscribe()
   }
@@ -113,7 +167,18 @@ export class LoginFormStateManager {
   }
 }
 
-type OnLogin = (userName: string, password: string) => void
+interface LoginSuccess {
+  kind: 'success',
+  user: string
+}
+
+interface LoginFailure {
+  kind: 'failure',
+  error: string
+}
+
+type LoginResult = LoginSuccess | LoginFailure 
+type OnLogin = (userName: string, password: string) => Observable<LoginResult>
 export interface LoginProps {
   onLogin: OnLogin
 }
