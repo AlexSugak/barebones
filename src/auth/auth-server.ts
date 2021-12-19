@@ -26,18 +26,16 @@ export function init(app: express.Express) {
     const existingUser = existingUsers.find(u => u.name === request.user)
 
     if (!existingUser) {
-      res.status(401).json({msg: 'wrong user name or password'} as LoginResponse)
-      return
+      return res.status(401).json({msg: 'wrong user name or password'} as LoginResponse)
     }
 
     const [dbPasswordHash, salt] = existingUser.password.split('.')
     const reqPasswordHash = passwordHash(request.password, salt)
 
     if (reqPasswordHash === dbPasswordHash) {
-      res.json({msg: 'logged in'})
-      return
+      return res.json({msg: 'logged in'} as LoginResponse)
     }
 
-    res.status(401).json({msg: 'wrong user name or password'} as LoginResponse)
+    return res.status(401).json({msg: 'wrong user name or password'} as LoginResponse)
   })
 }

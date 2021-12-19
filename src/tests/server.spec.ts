@@ -3,8 +3,6 @@ import http from 'http'
 import { Expect, test, spec } from '../spec'
 import { init } from '../server'
 
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
-
 export interface Response {
   status: number, data: any
 }

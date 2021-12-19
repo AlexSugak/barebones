@@ -18,8 +18,9 @@ export function init(app: express.Express = express(), endpoints: EndpointInit[]
 
   endpoints.forEach(e => e(app))
 
-  app.use(function (err, req, res, next) {
+  app.use(function (err, req, res: express.Response<any, Record<string, any>>, next) {
     console.error('express error:', err.stack)
+    res.status(500).send('Error processing request!')
     next(err)
   })
 }

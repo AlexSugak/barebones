@@ -25,9 +25,13 @@ export const getDevServerMessages = (): Observable<string> => {
   return serverMessages
 }
 
+export function isFileUpdatedMessage(m: string): FileUpdatedEvent | undefined {
+  return m.startsWith('updated') ? {fileName: m.replace('updated ', '')} : undefined
+}
+
 export const getSourceFilesUpdates = (serverMessages: Observable<string>): Observable<FileUpdatedEvent> => {
   return serverMessages.pipe(
-    filter(m => m.startsWith('updated')),
-    map(m => ({fileName: m.replace('updated ', '')}))
+    map(isFileUpdatedMessage),
+    filter(m => !!m)
   )
 }

@@ -28,6 +28,7 @@ async function reloadAPIServer() {
   // XXX: convention: all server files should end with 'server.js'
   // e.g. auth-server.js
   const serverFiles = jsFiles.filter(fn => fn.endsWith('server.js'))
+  console.log('server files', serverFiles)
 
   Promise.all(
     // reloading only /server.js will not work

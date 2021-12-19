@@ -10,12 +10,12 @@ type Comp<P> = React.FunctionComponent<P>
 
 const Empty = ({}) => <></>
 const Hot = <P extends object>({module, component, ...props}: {module: string, component: (module: any) => Comp<P> } & P) => {
-  const view = new BehaviorSubject<Comp<P>>(Empty)
+  const view = React.useRef(new BehaviorSubject<Comp<P>>(Empty))
 
   const reload = () => {
     const newSeed = (new Date()).getMilliseconds().toString()
     import(`${module}?seed=${newSeed}`).then(m => {
-      view.next(component(m))
+      view.current.next(component(m))
     })
   }
 
@@ -23,7 +23,7 @@ const Hot = <P extends object>({module, component, ...props}: {module: string, c
 
   React.useEffect(reload, [])
 
-  return <View stream={view}>
+  return <View stream={view.current}>
     {V => <V {...props as P} />}
   </View>
 }
@@ -66,8 +66,8 @@ const Router = await hotImport('./router', m => m.Router as RouterType)
 import { LinkType } from './router'
 const Link = await hotImport('./router', m => m.Link as LinkType)
 
-import { LoginType } from './auth/auth-view'
-const Login = await hotImport('./auth/auth-view', m => m.Login as LoginType)
+import { LoginViewType } from './auth/auth-view'
+const LoginView = await hotImport('./auth/auth-view', m => m.LoginView as LoginViewType)
 
 import { LayoutType } from './layout'
 const Layout = await hotImport('./layout', m => m.Layout as LayoutType)
@@ -77,6 +77,6 @@ export {
   Clock,
   Router,
   Link,
-  Login,
+  LoginView,
   Layout
 }

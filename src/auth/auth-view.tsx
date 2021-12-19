@@ -1,6 +1,4 @@
 import { React } from '../react'
-import { View } from '../hoc'
-import { Layout } from '../components'
 import { from, tap, EMPTY, withLatestFrom, BehaviorSubject, map, switchMap, Observable, Subject } from '../rx'
 import { assertNever } from '../errors'
 import { LoginRequest, LoginResponse } from './auth-types'
@@ -109,11 +107,18 @@ interface LoginFormState {
   login: string
   password: string
   errors: string[]
-  isSubmitted: boolean
+  isSubmitted: boolean,
+  loggedInSuccessfully: boolean
 }
 type AllActions = UpdateLogin | UpdatePassword | Submit
 export type Actions = Subject<AllActions>
-export const initialState: LoginFormState = { login: '', password: '', errors: [], isSubmitted: false }
+export const initialState: LoginFormState = { 
+  login: '', 
+  password: '', 
+  errors: [], 
+  isSubmitted: false,
+  loggedInSuccessfully: false
+}
 
 export class LoginFormStateManager {
   private _state: BehaviorSubject<LoginFormState> = 
@@ -141,7 +146,9 @@ export class LoginFormStateManager {
             assertNever(a)
         }
       }),
-      tap(s => this._state.next(s)),
+      tap(s => {
+        this._state.next(s)
+      }),
       switchMap(s => {
         if (!s.isSubmitted) {
           return EMPTY
@@ -150,11 +157,11 @@ export class LoginFormStateManager {
         return onLogin(s.login, s.password)
       }),
       tap(loginResult => {
-        console.log('login result', loginResult)
         const currentState = this._state.value
         this._state.next({
           ...currentState, 
-          isSubmitted: false, 
+          isSubmitted: false,
+          loggedInSuccessfully: loginResult.kind === 'success',
           errors: loginResult.kind === 'failure' ? [loginResult.error] : []
         })
       }),
@@ -177,68 +184,60 @@ interface LoginFailure {
   error: string
 }
 
-type LoginResult = LoginSuccess | LoginFailure 
-type OnLogin = (userName: string, password: string) => Observable<LoginResult>
+export type LoginResult = LoginSuccess | LoginFailure 
+export type OnLogin = (userName: string, password: string) => Observable<LoginResult>
 export interface LoginProps {
   onLogin: OnLogin
 }
 
-export const Login = ({onLogin}: LoginProps) => {
-  const actions: Actions = new Subject()
-  const sm = new LoginFormStateManager(actions, onLogin)
+export const LoginView = ({state, actions}: {state: LoginFormState, actions: Actions}) => {
+  if (state.loggedInSuccessfully) {
+    return <div>Success!</div>
+  }
 
   return (
-    <Layout>
-      <div> 
-        <View stream={sm.state}>
-          { s => 
-            <form action="#" method="POST" onSubmit={e => {
-                actions.next({kind: 'submit'})
-                e.preventDefault();
-              }}>
-              <label htmlFor="login" className="mt-1 block text-xs font-medium text-gray-700">
-                Login
-              </label>
-              <div className="mt-1 flex rounded-md shadow-sm">
-                <input
-                  type="text"
-                  name="login" 
-                  id="login"
-                  autoComplete="username"
-                  value={s.login} 
-                  onChange={e => {
-                    console.log('login change!', e.target.value)
-                    actions.next({kind: 'updateLogin', login: e.target.value})
-                  }}
-                  className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-none rounded-md sm:text-sm border-gray-300" 
-                  />
-              </div>
-              <label htmlFor="password" className="mt-1 block text-xs font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 flex rounded-md shadow-sm">
-                <input
-                  type="password"
-                  name="password" 
-                  id="password"
-                  autoComplete="current-password"
-                  value={s.password} 
-                  onChange={e => actions.next({kind: 'updatePassword', password: e.target.value})}
-                  className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-none rounded-md sm:text-sm border-gray-300" 
-                  />
-              </div>
-              <div>{s.errors.map(e => <div className="text-red-600">{e}</div>)}</div>
-              <div className="pt-2 text-left">
-                <button type="submit" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                  Login
-                </button>
-              </div>
-            </form>
-          }
-        </View>
+    <form className="w-64" action="#" method="POST" onSubmit={e => {
+      actions.next({kind: 'submit'})
+      e.preventDefault();
+    }}>
+      <label htmlFor="login" className="mt-1 block text-xs font-medium text-gray-700">
+        Login
+      </label>
+      <div className="mt-1 flex rounded-md shadow-sm">
+        <input
+          type="text"
+          name="login" 
+          id="login"
+          autoComplete="username"
+          value={state.login} 
+          onChange={e => {
+            actions.next({kind: 'updateLogin', login: e.target.value})
+          }}
+          className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300" 
+          />
       </div>
-    </Layout>
+      <label htmlFor="password" className="mt-1 block text-xs font-medium text-gray-700">
+        Password
+      </label>
+      <div className="mt-1 flex rounded-md shadow-sm">
+        <input
+          type="password"
+          name="password"
+          id="password"
+          autoComplete="current-password"
+          value={state.password} 
+          onChange={e => actions.next({kind: 'updatePassword', password: e.target.value})}
+          className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300" 
+          />
+      </div>
+      <div>{state.errors.map(e => <div key={e} className="text-red-600">{e}</div>)}</div>
+      <div className="pt-2 text-left">
+        <button type="submit" id="btnLogin" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          Login
+        </button>
+      </div>
+    </form>
   )
 }
 
-export type LoginType = typeof Login 
+export type LoginViewType = typeof LoginView 

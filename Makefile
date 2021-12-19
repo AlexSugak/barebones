@@ -28,6 +28,16 @@ replace-ts-paths: ## replaces all imports of ts paths with corresponding paths t
 
 post-process: add-js replace-ts-paths ## processes build output files
 
+css: ## generates css
+	sed -i '' -e 's/"module"/"commonjs"/g' package.json
+	npx tailwindcss -i ./src/styles.css -o ./dist/tailwind.css
+	sed -i '' -e 's/"commonjs"/"module"/g' package.json
+
+css-prod: ## generates css
+	sed -i '' -e 's/"module"/"commonjs"/g' package.json
+	NODE_ENV=production npx tailwindcss -i ./src/styles.css -o ./dist/tailwind.css --minify
+	sed -i '' -e 's/"commonjs"/"module"/g' package.json
+
 build: clean compile copy-lib post-process ## builds the app
 
 NODE_PATH=$(shell npm root -g)
@@ -49,6 +59,7 @@ test: ## runs all tests
 process-test: post-process test
 test-watch: ## runs all tests every time a file under ./src changes
 	@./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-test" 
+
 
 all: deps build dev-server ## builds the app and opens it in browser
 
