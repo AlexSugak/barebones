@@ -16,7 +16,6 @@ export function loginRequest({user, password}: LoginRequest): Observable<LoginRe
       body: JSON.stringify({user, password})
     })
     .then(response => response.json().then(body => {
-      console.log('fetch response', {status: response.status, body})
       return {response, body: body as LoginResponse}
     }))
     .then<LoginResult>(({response, body}) => {

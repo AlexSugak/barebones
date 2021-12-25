@@ -2,7 +2,7 @@ import { React } from './react'
 import { Actions, LoginFormStateManager, OnLogin } from './auth/auth-view';
 import { LoginView } from './components'
 import { delay, doNothing } from './utils'
-import { from, tap, EMPTY, withLatestFrom, BehaviorSubject, map, switchMap, Observable, Subject, of } from './rx'
+import { filter, tap, EMPTY, withLatestFrom, BehaviorSubject, map, switchMap, Observable, Subject, of } from './rx'
 import { View } from './hoc';
 import { assertNever } from './errors';
 import { getDevServerMessages, getSourceFilesUpdates } from './dev'
@@ -54,10 +54,11 @@ interface Story {
 
 type RecorderProps<T> = PropsWithLazyChildren<T> & {
   story?: Story,
+  composerCollapsed: boolean,
   onSaveStory: (story: Story) => void
 }
 
-export const Recorder = <T, >({lazyChildren, childProps, story, onSaveStory}: RecorderProps<T>): React.ReactElement => {
+export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapsed, onSaveStory}: RecorderProps<T>): React.ReactElement => {
   let [isValid, setIsValid] = React.useState(true)
   const checkValid = () => {
     if (recordedHtmlsRef.current.length === replayedHtmlsRef.current.length) {
@@ -92,7 +93,7 @@ export const Recorder = <T, >({lazyChildren, childProps, story, onSaveStory}: Re
   const isRecordingRef = React.useRef<boolean>()
   isRecordingRef.current = isRecording
 
-  let [showRecording, setShowRecording] = React.useState(false)
+  let [showRecording, setShowRecording] = React.useState(true)
   let [collapse, setCollapse] = React.useState(hasStory)
   const collapseRef = React.useRef<boolean>()
   collapseRef.current = collapse
@@ -178,6 +179,7 @@ export const Recorder = <T, >({lazyChildren, childProps, story, onSaveStory}: Re
   const replayEvent = (e: UserEvents) => {
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set
     const el = wrapperRef.current.querySelector('#' + e.targetId)
+    console.log('element', {id: e.targetId, el})
     switch (e.kind) {
       case 'inputChange':
         nativeInputValueSetter.call(el, e.value)
@@ -201,7 +203,7 @@ export const Recorder = <T, >({lazyChildren, childProps, story, onSaveStory}: Re
 
   const replay = async () => {
     if (wrapperRef.current) {
-      await delay(100)
+      await delay(300)
       setIsReplaying(true)
       setStates([])
 
@@ -258,11 +260,18 @@ export const Recorder = <T, >({lazyChildren, childProps, story, onSaveStory}: Re
       </button>
     )}
     <div className={collapse ? 'hidden' : ''}>
-      <div 
-        ref={wrapperRef}
-        className="pb-1">
-          {lazyChildren(childProps)}
-      </div>
+      <Collapsible 
+        collapsedByDefault={composerCollapsed} 
+        className='pl-1'
+        expand={<>show composer</>}
+        collapse={<>hide composer</>}
+        >
+        <div
+          ref={wrapperRef}
+          className="pb-1">
+            {lazyChildren(childProps)}
+        </div>
+      </Collapsible>
       <div>
         <div className="flex items-center pt-2">
           <button
@@ -347,92 +356,125 @@ export const Recorder = <T, >({lazyChildren, childProps, story, onSaveStory}: Re
   </div>)
 }
 
-const missingPassword: Story = {
-  name: 'missing password',
-  events: [
-      {
-          kind: "click",
-          targetId: "login"
-      },
-      {
-          kind: "inputChange",
-          targetId: "login",
-          value: "a"
-      },
-      {
-          kind: "click",
-          targetId: "btnLogin"
-      }
-  ],
-  htmls: [
-      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>",
-      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"a\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>",
-      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"a\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><div><div class=\"text-red-600\">password required!</div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>"
-  ]
-}
-
 const onLogin: OnLogin = (userName: string, password: string) => {
   return of({kind: 'success' as const, user: 'alex'})
 }
 
-const LoginStory = ({story, onSaveStory}: {story?: Story, onSaveStory: (s: Story) => void}) => {
-  const newSeed = () => (new Date()).getMilliseconds().toString()
-  const [key, setKey] = React.useState<string>(newSeed())
+const LoginStory = ({story, composerCollapsed = true, onSaveStory}: 
+  {story?: Story, composerCollapsed? : boolean, onSaveStory: (s: Story) => void}) => {
 
-  const getLoginSM = () => {
-    const actions: Actions = new Subject()
-    return {sm: new LoginFormStateManager(actions, onLogin), actions}
-  }
-  const getLoginSMNoCache = () => {
-    import('./auth/auth-view?seed=' + newSeed())
-    .then(m => {
-      const actions: Actions = new Subject()
-      return {sm: new m.LoginFormStateManager(actions, onLogin), actions}
-    })
-    .then(stateActions => {
-      sa.current = stateActions
-    })
-    .then(() => {
-      setKey(newSeed())
-    })
-  }
-  const sa = React.useRef(getLoginSM())
-
-  useSubscription(getSourceFilesUpdates(getDevServerMessages()).pipe(
-    tap(m => {
-      setTimeout(() => {
-        getLoginSMNoCache()
-      }, 0)
-    })
-  ))
-
-
-  return <div className="p-2" key={(story ? story.name : '') + key}> 
-    <View stream={sa.current.sm.state}>
+  const actions: Actions = new Subject()
+  const sm = new LoginFormStateManager(actions, onLogin)
+  return <div className="p-2" key={(story ? story.name : '')}> 
+    <View stream={sm.state}>
       {s => 
         <Recorder
           story={story}
           onSaveStory={onSaveStory}
+          composerCollapsed={composerCollapsed}
           childProps={s} 
           lazyChildren={s => 
-            <LoginView state={s} actions={sa.current.actions} />} 
+            <LoginView state={s} actions={actions} />} 
         />}
     </View>
   </div>
 }
 
+const Plus = ({}) =>
+  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+
+const Minus = ({}) =>
+  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+
+type CollapsibleProps = React.PropsWithChildren<{
+  className: string, 
+  collapsedByDefault?: boolean,
+  expand?: React.ReactNode,
+  collapse?: React.ReactNode
+}>
+
+const Collapsible = ({
+    children, 
+    className, 
+    collapsedByDefault = true, 
+    expand = <Plus />, 
+    collapse = <Minus />}: CollapsibleProps) => {
+  const [collapsed, setCollapsed] = React.useState(collapsedByDefault)
+  return (
+    <div className={className}>
+      <div>
+        <button
+          className={'inline-flex'}
+          name="expand"
+          onClick={() => setCollapsed(!collapsed)}>
+          {collapsed ? expand : collapse}
+        </button>
+      </div>
+      <div className={collapsed ? 'hidden' : ''}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export const Stories = ({}) => {
-  const [loginStories, setLoginStories] = React.useState([missingPassword])
+  const [stories, setStories] = React.useState<Story[]>([])
+
+  useSubscription(getSourceFilesUpdates(getDevServerMessages()).pipe(
+    filter(u => !u.fileName.includes('server')),
+    tap(m => {
+      setTimeout(() => {
+        // instead of trying to do HMR for stories
+        // just reload the page and let all stories run from scratch
+        window.location.reload()
+      }, 0)
+    })
+  ))
+
+  const getStories = () => {
+    fetch('/devApi/stories', {
+      method: 'GET',
+      cache: 'no-cache',
+      credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(json => {
+      setStories(json)
+    })
+  }
+
+  const saveStory = (story: Story) => {
+    fetch('/devApi/stories', {
+      method: 'POST',
+      cache: 'no-cache',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(story)
+    })
+    .then(response => {
+      console.log('story saved', {status: response.status})
+      if (response.status === 201) {
+        window.location.reload()
+      }
+      return
+    })
+  }
+
+  React.useEffect(() => getStories(), [])
 
   return (
-    <div> 
-      <LoginStory onSaveStory={s => setLoginStories(stories => [...stories, s])} />
+    <div className='p-2'> 
+      <Collapsible className='pl-1'>
+        <LoginStory composerCollapsed={false} onSaveStory={saveStory} />
+      </Collapsible>
+      {stories.map(s => <LoginStory key={s.name} onSaveStory={doNothing} story={s} />)}
       <hr/>
-      <div className="pl-1 pt-1">
-        Stories:
-        {loginStories.map(s => <LoginStory key={s.name} onSaveStory={doNothing} story={s} />)}
-        <hr/>
-      </div>
     </div>
   )
 }

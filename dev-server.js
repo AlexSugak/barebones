@@ -72,14 +72,36 @@ async function reloadAPIServer() {
 
 function reloadDevApi() {
   app.use(express.static(distDir));
-  app.get('*', function(req, res) {
-      res.sendFile(distDir + '/index.html');
-  });
   app.post('/compileSuccess', (req, res) => {
     console.log('/compileSuccess')
     checkFiles()
     res.send('OK')
   })
+
+  const storiesFile = __dirname + '/stories.json'
+  app.get('/devApi/stories', (req, res) => {
+    res.contentType('application/json')
+    res.sendFile(storiesFile);
+  })
+
+  app.post('/devApi/stories', (req, res) => {
+    console.log('POST /devApi/stories', req.body)
+    const story = req.body
+    const stories = JSON.parse(fs.readFileSync(storiesFile))
+
+    const newStories = [
+      ...stories.filter(s => s.name !== story.name),
+      story
+    ]
+
+    fs.writeFileSync(storiesFile, JSON.stringify(newStories, null, 2))
+    res.status(201)
+    res.send()
+  })
+
+  app.get('*', function(req, res) {
+      res.sendFile(distDir + '/index.html');
+  });
 }
 
 reloadDevApi()
