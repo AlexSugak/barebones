@@ -1,6 +1,7 @@
 import { React } from '../react'
-import { from, tap, EMPTY, withLatestFrom, BehaviorSubject, map, switchMap, Observable, Subject } from '../rx'
+import { distinctUntilChanged, from, tap, EMPTY, withLatestFrom, BehaviorSubject, map, switchMap, Observable, Subject, startWith } from '../rx'
 import { assertNever } from '../errors'
+import { equals } from '../eq'
 import { LoginRequest, LoginResponse } from './auth-types'
 
 export function loginRequest({user, password}: LoginRequest): Observable<LoginResult> {
@@ -82,7 +83,7 @@ export namespace User {
   }
 } 
 
-type ActionKind = 'updateLogin' | 'updatePassword' | 'submit'
+type ActionKind = 'updateLogin' | 'updatePassword' | 'clearErrors' | 'submit'
 
 interface LoginFormAction {
   kind: ActionKind
@@ -98,6 +99,10 @@ interface UpdatePassword extends LoginFormAction {
   password: string
 }
 
+interface ClearErrors extends LoginFormAction {
+  kind: 'clearErrors'
+}
+
 interface Submit extends LoginFormAction {
   kind: 'submit'
 }
@@ -109,7 +114,7 @@ interface LoginFormState {
   isSubmitted: boolean,
   loggedInSuccessfully: boolean
 }
-type AllActions = UpdateLogin | UpdatePassword | Submit
+type AllActions = UpdateLogin | UpdatePassword | ClearErrors | Submit
 export type Actions = Subject<AllActions>
 export const initialState: LoginFormState = { 
   login: '', 
@@ -122,6 +127,12 @@ export const initialState: LoginFormState = {
 export class LoginFormStateManager {
   private _state: BehaviorSubject<LoginFormState> = 
     new BehaviorSubject(initialState)
+
+  private _updateState(state: LoginFormState) {
+    if(!equals(this._state.value, state)) {
+      this._state.next(state)
+    }
+  }
 
   constructor(actions: Actions, onLogin: OnLogin){
     actions.pipe(
@@ -141,13 +152,13 @@ export class LoginFormStateManager {
               return {...s, errors: ['password required!']}
             }
             return {...s, isSubmitted: true, errors: []}
+          case 'clearErrors':
+            return {...s, errors: []}
           default:
             assertNever(a)
         }
       }),
-      tap(s => {
-        this._state.next(s)
-      }),
+      tap(s => this._updateState(s)),
       switchMap(s => {
         if (!s.isSubmitted) {
           return EMPTY
@@ -157,13 +168,13 @@ export class LoginFormStateManager {
       }),
       tap(loginResult => {
         const currentState = this._state.value
-        this._state.next({
+        this._updateState({
           ...currentState, 
           isSubmitted: false,
           loggedInSuccessfully: loginResult.kind === 'success',
           errors: loginResult.kind === 'failure' ? [loginResult.error] : []
         })
-      }),
+      })
       // TODO: make this disposable !!!!
     ).subscribe()
   }
@@ -209,6 +220,7 @@ export const LoginView = ({state, actions}: {state: LoginFormState, actions: Act
           id="login"
           autoComplete="username"
           value={state.login} 
+          onFocus={() => actions.next({kind: 'clearErrors'})}
           onChange={e => {
             actions.next({kind: 'updateLogin', login: e.target.value})
           }}
@@ -224,7 +236,8 @@ export const LoginView = ({state, actions}: {state: LoginFormState, actions: Act
           name="password"
           id="password"
           autoComplete="current-password"
-          value={state.password} 
+          value={state.password}
+          onFocus={() => actions.next({kind: 'clearErrors'})}
           onChange={e => actions.next({kind: 'updatePassword', password: e.target.value})}
           className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300" 
           />

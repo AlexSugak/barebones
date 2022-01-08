@@ -23,6 +23,29 @@
     ]
   },
   {
+    "name": "missing login",
+    "events": [
+      {
+        "kind": "click",
+        "targetId": "password"
+      },
+      {
+        "kind": "inputChange",
+        "targetId": "password",
+        "value": "a"
+      },
+      {
+        "kind": "click",
+        "targetId": "btnLogin"
+      }
+    ],
+    "htmls": [
+      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>",
+      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"a\"></div><div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>",
+      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"a\"></div><div><div class=\"text-red-600\">login required!</div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>"
+    ]
+  },
+  {
     "name": "login success",
     "events": [
       {
@@ -56,26 +79,31 @@
     ]
   },
   {
-    "name": "missing login",
+    "name": "hide errors after focus",
     "events": [
       {
         "kind": "click",
-        "targetId": "password"
+        "targetId": "login"
       },
       {
         "kind": "inputChange",
-        "targetId": "password",
+        "targetId": "login",
         "value": "a"
       },
       {
         "kind": "click",
         "targetId": "btnLogin"
+      },
+      {
+        "kind": "click",
+        "targetId": "password"
       }
     ],
     "htmls": [
       "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>",
-      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"a\"></div><div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>",
-      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"a\"></div><div><div class=\"text-red-600\">login required!</div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>"
+      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"a\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>",
+      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"a\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><div><div class=\"text-red-600\">password required!</div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>",
+      "<form class=\"w-64\" action=\"#\" method=\"POST\"><label for=\"login\" class=\"mt-1 block text-xs font-medium text-gray-700\">Login</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"text\" name=\"login\" id=\"login\" autocomplete=\"username\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"a\"></div><label for=\"password\" class=\"mt-1 block text-xs font-medium text-gray-700\">Password</label><div class=\"mt-1 flex rounded-md shadow-sm\"><input type=\"password\" name=\"password\" id=\"password\" autocomplete=\"current-password\" class=\"focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300\" value=\"\"></div><div></div><div class=\"pt-2 text-left\"><button type=\"submit\" id=\"btnLogin\" class=\"inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500\">Login</button></div></form>"
     ]
   }
 ]

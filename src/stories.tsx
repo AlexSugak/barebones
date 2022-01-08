@@ -195,6 +195,15 @@ export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapse
           buttons: 1
         })
         el.dispatchEvent(cev)
+        if (el.nodeName === 'INPUT') {
+          const fev = new FocusEvent('focus', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+          })
+          el.dispatchEvent(fev)
+        }
+
         return
       default:
         assertNever(e)
@@ -238,9 +247,20 @@ export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapse
       events: eventsRef.current,
       htmls: recordedHtmlsRef.current
     }
-    console.log('saving:', newStory)
 
+    console.log('saving:', newStory)
     onSaveStory(newStory)
+  }
+
+  const updateStory = () => {
+    const updatedStory: Story = {
+      name: storyName,
+      events: story.events,
+      htmls: replayedHtmlsRef.current
+    }
+
+    console.log('saving:', updatedStory)
+    onSaveStory(updatedStory)
   }
 
   const toggleShowRecording = () => {
@@ -255,9 +275,19 @@ export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapse
 
   return (<div>
     {hasStory && (
-      <button onClick={toggleCollapse}>
-        <span className={isValid ? 'text-green-400' : 'text-red-400'}>{story.name}</span>
-      </button>
+      <div className="flex items-center">
+        <button onClick={toggleCollapse}>
+          <span className={isValid ? 'text-green-400' : 'text-red-400'}>{story.name}</span>
+        </button>
+        {!isValid && 
+          <button 
+            className="pl-2"
+            onClick={updateStory}>
+            <svg className="h-5 w-5 fill-green-400" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </button>}
+      </div>
     )}
     <div className={collapse ? 'hidden' : ''}>
       <Collapsible 
@@ -473,7 +503,7 @@ export const Stories = ({}) => {
       <Collapsible className='pl-1'>
         <LoginStory composerCollapsed={false} onSaveStory={saveStory} />
       </Collapsible>
-      {stories.map(s => <LoginStory key={s.name} onSaveStory={doNothing} story={s} />)}
+      {stories.map(s => <LoginStory key={s.name} onSaveStory={saveStory} story={s} />)}
       <hr/>
     </div>
   )
