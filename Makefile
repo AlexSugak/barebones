@@ -60,6 +60,19 @@ process-test: post-process test
 test-watch: ## runs all tests every time a file under ./src changes
 	@./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-test" 
 
+docker-down: ## shuts down docker compose
+	@docker-compose down
+
+docker-up: ## starts up docker compose
+	@docker-compose up -d
+
+postgres-rebuild: docker-down ## rebuilds and restarts postgres service, use it to e.g. update the db schema
+	@rm -rf ./postgres-data
+	@$(MAKE) docker-up
+
+postgres-connect: docker-up ## connects to postgress container and runs bash, run `psql -U postgres` to connect to db
+	@CID=$$(docker ps -aqf "name=postgres"); \
+	docker exec -it "$$CID" /bin/bash
 
 all: deps build dev-server ## builds the app and opens it in browser
 

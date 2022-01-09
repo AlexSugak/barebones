@@ -5,13 +5,15 @@ import { specs as specSpecs } from '../tests/spec.spec'
 import { specs as routerSpecs } from '../tests/router.spec'
 import { specs as serverSpecs } from '../tests/server.spec'
 import { specs as authSpecs } from '../auth/auth.spec'
+import { specs as dbSpecs } from '../db/db.spec'
 
 const specs = [
-  allWorksSpec,
-  ...specSpecs,
-  ...routerSpecs,
+  // allWorksSpec,
+  // ...specSpecs,
+  // ...routerSpecs,
   ...serverSpecs,
-  ...authSpecs
+  ...authSpecs,
+  ...dbSpecs
 ]
 
 const greenLog = coloredLog(Colors.FgGreen)

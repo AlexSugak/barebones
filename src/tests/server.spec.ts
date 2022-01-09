@@ -2,6 +2,9 @@ import express from 'express'
 import http from 'http'
 import { Expect, test, spec } from '../spec'
 import { init } from '../server'
+import postgres from 'postgres'
+import { connect } from '../db/connection'
+import { dbSchema } from '../db/schema'
 
 export interface Response {
   status: number, data: any
@@ -57,7 +60,26 @@ export function request(options: {
 }
 
 
-// TODO: withDatabase
+let _dbIndex = 1
+export async function withDatabase(
+  assert: (sql: postgres.Sql<{}>) => Promise<void>
+) {
+
+  const dbName = `test_database_${_dbIndex}`
+  _dbIndex = _dbIndex + 1
+  const mainSql = connect()
+  const dropCmd = `DROP DATABASE IF EXISTS ${dbName}`
+  const createCmd = `CREATE DATABASE ${dbName}`
+  await mainSql.unsafe(dropCmd)
+  await mainSql.unsafe(createCmd)
+  
+  const sql = connect(dbName)
+  await sql.unsafe(dbSchema)
+  await assert(sql)
+  await sql.end()
+
+  await mainSql.unsafe(dropCmd)
+}
 
 let _port = 3001
 export async function withServer(

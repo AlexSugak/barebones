@@ -20,6 +20,18 @@ export namespace Expect {
 `)
     }
   }
+
+  export function notEmpty(
+    actual: string, 
+    errorMessage: string = 'Expected not empty string.'): void {
+    if (actual === undefined || actual === '') {
+      throw Error(
+`${errorMessage}
+    expected value to be not empty but got:
+    ${actual}
+`)
+    }
+  }
 }
 
 export interface SpecificationTest {

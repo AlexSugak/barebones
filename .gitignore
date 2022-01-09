@@ -1,4 +1,5 @@
 dist/js
 .DS_Store
 node_modules
+postgres-data
 yarn-error.log
