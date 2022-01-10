@@ -21,6 +21,21 @@ export namespace Expect {
     }
   }
 
+  export function notEquals<T>(
+    expected: T, 
+    actual: T, 
+    errorMessage: string = 'Expected value to not match the provided value.'): void {
+    if (structEq(expected, actual)) {
+      throw Error(
+`${errorMessage}
+    expected:
+    ${JSON.stringify(expected)}
+    actual:
+    ${JSON.stringify(actual)}
+`)
+    }
+  }
+
   export function notEmpty(
     actual: string, 
     errorMessage: string = 'Expected not empty string.'): void {
@@ -30,6 +45,17 @@ export namespace Expect {
     expected value to be not empty but got:
     ${actual}
 `)
+    }
+  }
+
+  export function startsWith(
+    prefix: string,
+    actual: string): void {
+    if (!actual.startsWith(prefix)) {
+      throw Error(
+  `expected value to start with "${prefix}" but got:
+    ${actual}
+  `)
     }
   }
 }

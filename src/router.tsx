@@ -112,7 +112,6 @@ export function matchLocationToPath(location: string): PathWithParams {
   return {path: '/not-found', params: {}}
 }
 
-
 export type MathLocation = (location: string) => React.ReactElement
 
 export const restrictAnonymous: (inner: MathLocation, isLoggedIn: () => boolean) 

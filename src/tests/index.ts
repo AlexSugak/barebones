@@ -8,9 +8,9 @@ import { specs as authSpecs } from '../auth/auth.spec'
 import { specs as dbSpecs } from '../db/db.spec'
 
 const specs = [
-  // allWorksSpec,
-  // ...specSpecs,
-  // ...routerSpecs,
+  allWorksSpec,
+  ...specSpecs,
+  ...routerSpecs,
   ...serverSpecs,
   ...authSpecs,
   ...dbSpecs
@@ -20,6 +20,7 @@ const greenLog = coloredLog(Colors.FgGreen)
 const redLog = coloredLog(Colors.FgRed)
 
 console.log('Running all tests...')
+console.time('exec time') 
 
 const results: SpecificationResult[] = 
   (await Promise.all(specs.map(s => runSpec(s))))
@@ -40,3 +41,4 @@ greenLog(`${successTests.length} test(s) succeeded`)
 if(failureTests.length > 0) {
   redLog(`${failureTests.length} test(s) failed`)
 }
+console.timeEnd('exec time')

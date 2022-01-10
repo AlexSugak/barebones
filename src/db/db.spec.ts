@@ -19,12 +19,12 @@ export const specs = [
       }),
       test('test isolation works', async () => {
         await withDatabase(async sql => {
-          const dbName = await sql<{current_database: string}[]>`SELECT current_database()`
+          const dbName = await sql<{search_path: string}[]>`SHOW search_path`
           if(dbName.length === 0) {
             throw new Error('failed to read current db name')
           }
 
-          Expect.notEmpty(dbName[0].current_database)
+          Expect.startsWith('test_schema', dbName[0].search_path)
         })}
       ),
       test('admin user is created', async () => {

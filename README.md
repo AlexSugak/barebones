@@ -30,6 +30,7 @@ The constraints for this repo are:
 - Tailwindcss
 - Express (for dev server and back-end)
 - ws (for hot module reloading)
+- [postgres js lib](https://github.com/porsager/postgres) for accessing postgres DB 
 
 
 ## Getting started

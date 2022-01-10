@@ -1,7 +1,7 @@
 import express from 'express'
 import http from 'http'
 import { Expect, test, spec } from '../spec'
-import { init } from '../server'
+import { buildDependencies, defaultEndpoints, Dependencies, init } from '../server'
 import postgres from 'postgres'
 import { connect } from '../db/connection'
 import { dbSchema } from '../db/schema'
@@ -60,35 +60,41 @@ export function request(options: {
 }
 
 
-let _dbIndex = 1
+let _schemaIndex = 1
 export async function withDatabase(
-  assert: (sql: postgres.Sql<{}>) => Promise<void>
+  test: (sql: postgres.Sql<{}>) => Promise<void>
 ) {
+  // every test gets its own schema
+  const schemaName = `test_schema_${_schemaIndex}`
+  _schemaIndex = _schemaIndex + 1
 
-  const dbName = `test_database_${_dbIndex}`
-  _dbIndex = _dbIndex + 1
-  const mainSql = connect()
-  const dropCmd = `DROP DATABASE IF EXISTS ${dbName}`
-  const createCmd = `CREATE DATABASE ${dbName}`
-  await mainSql.unsafe(dropCmd)
-  await mainSql.unsafe(createCmd)
+  // create it from scratch
+  const db = connect()
+  const dropCmd = `DROP SCHEMA IF EXISTS ${schemaName} CASCADE`
+  await db.unsafe(dropCmd)
+  await db.unsafe(`CREATE SCHEMA IF NOT EXISTS ${schemaName}`)
+
+  // run the test
+  // TODO: is using transactions for isolation a good idea here?
+  // maybe we should just prepend "set search_path" to each query automatically
+  await db.begin(async sql => {
+    await sql.unsafe(`SET search_path TO ${schemaName}`)
+    await sql.unsafe(dbSchema)
+    await test(sql)
+  })
   
-  const sql = connect(dbName)
-  await sql.unsafe(dbSchema)
-  await assert(sql)
-  await sql.end()
-
-  await mainSql.unsafe(dropCmd)
+  await db.end()
 }
 
 let _port = 3001
-export async function withServer(
+export async function withWebServer(
+    dependencies: Dependencies,
     makeRequest: (port: number) => Promise<Response>,
     assert: (resp: Response) => void
   ) {
     _port = _port + 1
   const app = express()
-  init(app)
+  init(app, defaultEndpoints(), dependencies)
   const server = app.listen(_port)
 
   let resp: Response
@@ -107,7 +113,8 @@ export const specs = [
     'api server',
     [
       test('works', async () => {
-        await withServer(
+        await withWebServer(
+          buildDependencies(),
           port => request({
             hostname: 'localhost',
             path: '/api',

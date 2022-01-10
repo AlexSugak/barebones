@@ -4,7 +4,8 @@
   "description": "",
   "version": "0.1.0",
   "dependencies": {
-    "postgres": "porsager/postgres#esm"
+    "postgres": "porsager/postgres#esm",
+    "express": "^4.17.1"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.4.0",
@@ -13,7 +14,6 @@
     "@types/react": "^17.0.20",
     "@types/react-dom": "^17.0.9",
     "body-parser": "^1.19.0",
-    "express": "^4.17.1",
     "tailwindcss": "^3.0.7",
     "tsc-watch": "^4.5.0",
     "typescript": "^4.5.2",
