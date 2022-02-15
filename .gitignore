@@ -3,3 +3,4 @@ dist/js
 node_modules
 postgres-data
 yarn-error.log
+*.bak
