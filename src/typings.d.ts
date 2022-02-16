@@ -9,6 +9,12 @@ declare module 'lib/react' {
     };
 }
 
+declare module 'lib/react-server' {
+  import * as ReactDOMServer from 'react-dom/server'
+
+  export default ReactDOMServer
+}
+
 // declare module 'https://unpkg.com/@esm-bundle/rxjs@7.3.0/esm/es5/rxjs.min.js' {
 declare module 'lib/rxjs' {
     export * from 'rxjs';

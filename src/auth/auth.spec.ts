@@ -3,6 +3,25 @@ import { request, withDatabase, withWebServer } from '../tests/server.spec'
 
 export const specs = [
   spec(
+    'login server', [
+      test('server should render static logic markup', async () => {
+        await withDatabase(async sql =>
+          await withWebServer(
+            { sql },
+            port => request({
+              hostname: 'localhost',
+              path: '/login',
+              port,
+              method: 'GET'
+            }),
+            resp => {
+              Expect.contains('<title>Bare Bones App</title>', resp.data)
+              Expect.contains('<form', resp.data)
+            }
+          ))
+      })
+    ]),
+  spec(
     'login api',
     [
       test('returns OK on valid credentials', async () => {
@@ -19,7 +38,7 @@ export const specs = [
                 password: '123'
               }
             }),
-            resp => Expect.equals({msg: 'logged in'}, resp.data)
+            resp => Expect.equals({msg: 'logged in'}, JSON.parse(resp.data))
           ))
       }),
       test('returns 401 on invalid password', async () => {

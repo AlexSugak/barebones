@@ -12,5 +12,3 @@ export const Layout = ({children}) => {
     </div>
   )
 }
-
-export type LayoutType = typeof Layout

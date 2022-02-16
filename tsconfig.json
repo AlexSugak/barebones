@@ -21,6 +21,7 @@
           "rxjs": ["types/rx"],
           "module": ["node_modules/@types/node/module.d.ts"],
           "lib/react": ["lib/react/dev/index.js"],
+          "lib/react-server": ["lib/react/dev/react-dom-server-browser.js"],
           "lib/rxjs": ["lib/rxjs/rxjs.min.js"]
       }
   },

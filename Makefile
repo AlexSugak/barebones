@@ -51,7 +51,7 @@ process-notify: post-process
 watch-hot: build
 	./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-notify"
 
-dev-hot: dev-server watch-hot ## !!!Important run with -j2 option!!! Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
+dev: dev-server watch-hot ## !!!Important run with -j2 option!!! Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
 
 test: ## runs all tests
 	@NODE_PATH=${NODE_PATH} node --experimental-top-level-await ./dist/js/tests/index.js

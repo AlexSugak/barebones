@@ -25,15 +25,8 @@ const views: Views = {
 }
 
 export const App = ({}) => {
-  
-  const navigate = (url: string) => router.navigate(url)
-  
-  // const NavLink = 
-  //   (params: Omit<LinkParams, 'navigate'>) => 
-  //     <Link {...{...params, navigate}} />
-
   const matchLocation = restrictAnonymous(matchLocationToView(views), () => user.isLoggedIn())
-
+  
   return (<>
     <Router location={router.location} match={matchLocation} />
   </>)

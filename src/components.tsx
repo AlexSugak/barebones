@@ -8,10 +8,11 @@ const modules: Map<string, () => void> = new Map()
 
 type Comp<P> = React.FunctionComponent<P>
 
-const Empty = ({}) => <></>
-const Hot = <P extends object>({module, component, ...props}: {module: string, component: (module: any) => Comp<P> } & P) => {
-  const view = React.useRef(new BehaviorSubject<Comp<P>>(Empty))
+const Hot = <P extends object>(
+  {module, initialComponent, component, ...props}: 
+  {module: string, initialComponent: Comp<P>, component: (module: any) => Comp<P> } & P) => {
 
+  const view = React.useRef(new BehaviorSubject<Comp<P>>(initialComponent))
   const reload = () => {
     const newSeed = (new Date()).getMilliseconds().toString()
     import(`${module}?seed=${newSeed}`).then(m => {
@@ -28,13 +29,13 @@ const Hot = <P extends object>({module, component, ...props}: {module: string, c
   </View>
 }
 
-const makeHot = <P extends object>(module: string, inner: (module: any) => Comp<P>): Comp<P> => {
-  return (p: P) => <Hot module={module} component={inner} {...p} />
+const makeHot = <P extends object>(module: string, initial: Comp<P>, inner: (module: any) => Comp<P>): Comp<P> => {
+  return (p: P) => <Hot module={module} initialComponent={initial} component={inner} {...p} />
 }
 
-const cook = async <P extends object>(module: string, component: (module: any) => Comp<P>): Promise<Comp<P>> => {
+const cook = async <P extends object>(module: string, initial: Comp<P>, component: (module: any) => Comp<P>): Promise<Comp<P>> => {
   if (isDev) {
-    return Promise.resolve(makeHot(module, component))
+    return Promise.resolve(makeHot(module, initial, component))
   } else {
     return await import(module).then(component)
   }
@@ -53,28 +54,24 @@ if (isDev) {
   })
 }
 
-const hotImport = async <P extends object>(module: string, m: (module: any) => Comp<P>) => 
-  await cook(module, m)
+const hotImport = async <P extends object>(module: string, initial: Comp<P>, m: (module: any) => Comp<P>) => 
+  await cook(module, initial, m)
 
 // TODO: make this type-safe
-import { ClockType } from './clock'
-const Clock = await hotImport('./clock', m => m.Clock as ClockType)
+import { Router as RouterComp } from './router'
+const Router = await hotImport('./router', RouterComp, m => m.Router)
 
-import { RouterType } from './router'
-const Router = await hotImport('./router', m => m.Router as RouterType)
+import { Link as LinkComp } from './router'
+const Link = await hotImport('./router', LinkComp, m => m.Link)
 
-import { LinkType } from './router'
-const Link = await hotImport('./router', m => m.Link as LinkType)
+import { LoginView as LoginViewComp } from './auth/auth-view'
+const LoginView = await hotImport('./auth/auth-view', LoginViewComp, m => m.LoginView)
 
-import { LoginViewType } from './auth/auth-view'
-const LoginView = await hotImport('./auth/auth-view', m => m.LoginView as LoginViewType)
-
-import { LayoutType } from './layout'
-const Layout = await hotImport('./layout', m => m.Layout as LayoutType)
+import { Layout as LayoutComp } from './layout'
+const Layout = await hotImport('./layout', LayoutComp, m => m.Layout)
 
 // TODO: do not make components hot if not isDev
 export {
-  Clock,
   Router,
   Link,
   LoginView,

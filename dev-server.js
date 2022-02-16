@@ -100,10 +100,11 @@ function reloadDevApi() {
   })
 
   app.get('*', function(req, res) {
-      res.sendFile(distDir + '/index.html');
+    res.sendFile(distDir + '/index.html');
   });
 }
 
+reloadAPIServer()
 reloadDevApi()
 
 const files = {}

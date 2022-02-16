@@ -1,8 +1,9 @@
 import { React } from '../react'
-import { distinctUntilChanged, from, tap, EMPTY, withLatestFrom, BehaviorSubject, map, switchMap, Observable, Subject, startWith } from '../rx'
+import { from, tap, EMPTY, withLatestFrom, BehaviorSubject, map, switchMap, Observable, Subject } from '../rx'
 import { assertNever } from '../errors'
 import { equals } from '../eq'
 import { LoginRequest, LoginResponse } from './auth-types'
+import { Layout } from '../layout'
 
 export function loginRequest({user, password}: LoginRequest): Observable<LoginResult> {
   return from(
@@ -114,7 +115,7 @@ interface LoginFormState {
   isSubmitted: boolean,
   loggedInSuccessfully: boolean
 }
-type AllActions = UpdateLogin | UpdatePassword | ClearErrors | Submit
+export type AllActions = UpdateLogin | UpdatePassword | ClearErrors | Submit
 export type Actions = Subject<AllActions>
 export const initialState: LoginFormState = { 
   login: '', 
@@ -202,54 +203,56 @@ export interface LoginProps {
 
 export const LoginView = ({state, actions}: {state: LoginFormState, actions: Actions}) => {
   if (state.loggedInSuccessfully) {
-    return <div>Success!</div>
+    return <Layout><div>Success!</div></Layout>
   }
 
   return (
-    <form className="w-64" action="#" method="POST" onSubmit={e => {
-      actions.next({kind: 'submit'})
-      e.preventDefault();
-    }}>
-      <label htmlFor="login" className="mt-1 block text-xs font-medium text-gray-700">
-        Login
-      </label>
-      <div className="mt-1 flex rounded-md shadow-sm">
-        <input
-          type="text"
-          name="login" 
-          id="login"
-          autoComplete="username"
-          value={state.login} 
-          onFocus={() => actions.next({kind: 'clearErrors'})}
-          onChange={e => {
-            actions.next({kind: 'updateLogin', login: e.target.value})
-          }}
-          className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300" 
-          />
+    <Layout>
+      <div> 
+        <form className="w-64" action="#" method="POST" onSubmit={e => {
+          actions.next({kind: 'submit'})
+          e.preventDefault();
+        }}>
+          <label htmlFor="login" className="mt-1 block text-xs font-medium text-gray-700">
+            Login
+          </label>
+          <div className="mt-1 flex rounded-md shadow-sm">
+            <input
+              type="text"
+              name="login" 
+              id="login"
+              autoComplete="username"
+              value={state.login} 
+              onFocus={() => actions.next({kind: 'clearErrors'})}
+              onChange={e => {
+                actions.next({kind: 'updateLogin', login: e.target.value})
+              }}
+              className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300" 
+              />
+          </div>
+          <label htmlFor="password" className="mt-1 block text-xs font-medium text-gray-700">
+            Password
+          </label>
+          <div className="mt-1 flex rounded-md shadow-sm">
+            <input
+              type="password"
+              name="password"
+              id="password"
+              autoComplete="current-password"
+              value={state.password}
+              onFocus={() => actions.next({kind: 'clearErrors'})}
+              onChange={e => actions.next({kind: 'updatePassword', password: e.target.value})}
+              className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300" 
+              />
+          </div>
+          <div>{state.errors.map(e => <div key={e} className="text-red-600">{e}</div>)}</div>
+          <div className="pt-2 text-left">
+            <button type="submit" id="btnLogin" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              Login
+            </button>
+          </div>
+        </form>
       </div>
-      <label htmlFor="password" className="mt-1 block text-xs font-medium text-gray-700">
-        Password
-      </label>
-      <div className="mt-1 flex rounded-md shadow-sm">
-        <input
-          type="password"
-          name="password"
-          id="password"
-          autoComplete="current-password"
-          value={state.password}
-          onFocus={() => actions.next({kind: 'clearErrors'})}
-          onChange={e => actions.next({kind: 'updatePassword', password: e.target.value})}
-          className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300" 
-          />
-      </div>
-      <div>{state.errors.map(e => <div key={e} className="text-red-600">{e}</div>)}</div>
-      <div className="pt-2 text-left">
-        <button type="submit" id="btnLogin" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-          Login
-        </button>
-      </div>
-    </form>
+    </Layout>
   )
 }
-
-export type LoginViewType = typeof LoginView 

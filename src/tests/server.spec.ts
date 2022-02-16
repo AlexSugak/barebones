@@ -34,7 +34,7 @@ export function request(options: {
         res.on('data', data => {
           const response = {
             status: res.statusCode,
-            data: JSON.parse(data)
+            data
           }
           // console.log('received response', response)
           resolve(response)
@@ -121,7 +121,7 @@ export const specs = [
             port,
             method: 'GET',
           }),
-          resp => Expect.equals({msg: 'OK'}, resp.data)
+          resp => Expect.equals({msg: 'OK'}, JSON.parse(resp.data))
         )
       })
     ]

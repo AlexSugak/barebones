@@ -172,8 +172,6 @@ export const Router = ({
   </>)
 }
 
-export type RouterType = typeof Router 
-
 export type LinkParams = 
   {route: PathWithParams, label: string, navigate: (url: string) => void}
 export const Link = (
@@ -183,5 +181,3 @@ export const Link = (
     navigate(generatePathUrl(route.path, route.params))
   }}>{label}</a>)
 }
-
-export type LinkType = typeof Link 

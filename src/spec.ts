@@ -58,6 +58,17 @@ export namespace Expect {
   `)
     }
   }
+
+  export function contains(
+    search: string,
+    actual: string): void {
+    if (!actual.includes(search)) {
+      throw Error(
+  `expected value to contain "${search}" but got:
+    ${actual}
+  `)
+    }
+  }
 }
 
 export interface SpecificationTest {
