@@ -13,6 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const distDir = __dirname + '/dist';
+process.env.DIST_DIR = distDir
 
 const doNothing = () => {}
 const importNoCache = (module) => {
@@ -59,19 +60,20 @@ async function reloadAPIServer() {
         'expressInit'
       ]
 
-      app._router.stack = app._router.stack.filter(l => doNotDelete.includes(l.name))
+      if(app._router) {
+        app._router.stack = app._router.stack.filter(l => doNotDelete.includes(l.name))
+      }
       // api endpoints must go first
-      // before the "serve static" wildcard endpoint added in reloadDevApi  
-      initAPI(app, endpointInits)
-      reloadDevApi()
+      // before the "serve static" wildcard endpoint added in initDevApi  
+      initAPI(app, [...endpointInits, initDevApi])
       // console.log(app._router)
     }
   )
   .catch(e => console.error('error reloading api server', e))
 }
 
-function reloadDevApi() {
-  app.use(express.static(distDir));
+function initDevApi(_dependencies, app) {
+  console.log('configuring dev endpoints')
   app.post('/compileSuccess', (req, res) => {
     console.log('/compileSuccess')
     checkFiles()
@@ -79,7 +81,7 @@ function reloadDevApi() {
   })
 
   const storiesFile = __dirname + '/stories.json'
-  app.get('/devApi/stories', (req, res) => {
+  app.get('/devApi/stories', (_req, res) => {
     res.contentType('application/json')
     res.sendFile(storiesFile);
   })
@@ -98,14 +100,9 @@ function reloadDevApi() {
     res.status(201)
     res.send()
   })
-
-  app.get('*', function(req, res) {
-    res.sendFile(distDir + '/index.html');
-  });
 }
 
 reloadAPIServer()
-reloadDevApi()
 
 const files = {}
 async function checkFiles() {
@@ -126,16 +123,13 @@ async function checkFiles() {
     .forEach(file => {
       const fileName = file.replace(distDir, '')
       console.log('file updated', fileName)
+
       wss.clients.forEach(c => {
         c.send('updated ' + fileName)
       })
     })
 
-  const serverFiles = updatedFiles.filter(f => f.includes('server'))
-
-  if (serverFiles.length > 0) {
-    await reloadAPIServer(serverFiles)
-  }
+  await reloadAPIServer()
 }
 
 const server = app.listen(port, () => {

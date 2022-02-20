@@ -48,10 +48,14 @@ dev-server: ## starts dev server
 process-notify: post-process
 	curl -X POST http://localhost:3000/compileSuccess
 	$(MAKE) test
-watch-hot: build
+
+watch-hot:
 	./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-notify"
 
-dev: dev-server watch-hot ## !!!Important run with -j2 option!!! Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
+dev: ## Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
+	$(MAKE) build
+	$(MAKE) dev-server &
+	$(MAKE) watch-hot
 
 test: ## runs all tests
 	@NODE_PATH=${NODE_PATH} node --experimental-top-level-await ./dist/js/tests/index.js

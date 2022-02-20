@@ -121,7 +121,7 @@ export const specs = [
             port,
             method: 'GET',
           }),
-          resp => Expect.equals({msg: 'OK'}, JSON.parse(resp.data))
+          resp => Expect.equals({msg: 'welcome to bare bones API'}, JSON.parse(resp.data))
         )
       })
     ]
