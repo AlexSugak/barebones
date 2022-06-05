@@ -1,5 +1,10 @@
 .DEFAULT_GOAL := help
-.PHONY: deps clean compile build add-js replace-ts-paths post-process watch-hot dev-hot dev-server test test-watch all 
+.PHONY: deps clean compile build add-js import-map replace-ts-paths post-process watch-hot dev-hot dev-server test test-watch all 
+
+.EXPORT_ALL_VARIABLES:
+
+NODE_PATH=$(shell npm root -g)
+DIST_DIR=$(shell realpath ./dist)
 
 deps: ## installs dependencies
 	yarn --frozen-lockfile
@@ -26,7 +31,13 @@ add-js: ## replaces "import from './module'" -> "import from './module.js'" \
 replace-ts-paths: ## replaces all imports of ts paths with corresponding paths to physical files
 	@node ./scripts/replaceTsPaths.js
 
-post-process: add-js replace-ts-paths ## processes build output files
+import-map: ## generates import map file
+	@node ./scripts/generateImportMap.js
+
+hashes: ## appends hashes to js files in dist
+	@node ./scripts/appendHashes.js
+
+post-process: import-map replace-ts-paths ## processes build output files
 
 css: ## generates css
 	sed -i '' -e 's/"module"/"commonjs"/g' package.json
@@ -40,17 +51,20 @@ css-prod: ## generates css
 
 build: clean compile copy-lib post-process ## builds the app
 
-NODE_PATH=$(shell npm root -g)
+publish: ## prepares production bundle
+	$(MAKE) build
+	$(MAKE) hashes
+	$(MAKE) import-map
 
 dev-server: ## starts dev server
-	NODE_PATH=${NODE_PATH} node --experimental-top-level-await dev-server.js
+	@node --experimental-top-level-await --experimental-policy=./dist/js/policy.json dev-server.js
 
 process-notify: post-process
-	curl -X POST http://localhost:3000/compileSuccess
+	@curl -X POST http://localhost:3000/compileSuccess
 	$(MAKE) test
 
 watch-hot:
-	./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-notify"
+	@./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-notify"
 
 dev: ## Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
 	$(MAKE) build
@@ -58,7 +72,7 @@ dev: ## Builds app, serves it, starts dev server and notifies app via web socket
 	$(MAKE) watch-hot
 
 test: ## runs all tests
-	@NODE_PATH=${NODE_PATH} node --experimental-top-level-await ./dist/js/tests/index.js
+	@node --experimental-top-level-await --experimental-policy=./dist/js/policy.json ./dist/js/tests/index.js
 
 process-test: post-process test
 test-watch: ## runs all tests every time a file under ./src changes
@@ -78,7 +92,7 @@ postgres-connect: docker-up ## connects to postgress container and runs bash, ru
 	@CID=$$(docker ps -aqf "name=postgres"); \
 	docker exec -it "$$CID" /bin/bash
 
-all: deps build dev-server ## builds the app and opens it in browser
+all: deps build docker-up dev-server ## restores dependecies, builds the app and runs dev server
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

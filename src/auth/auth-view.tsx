@@ -208,7 +208,7 @@ export const LoginView = ({state, actions}: {state: LoginFormState, actions: Act
 
   return (
     <Layout>
-      <div> 
+      <div>
         <form className="w-64" action="#" method="POST" onSubmit={e => {
           actions.next({kind: 'submit'})
           e.preventDefault();

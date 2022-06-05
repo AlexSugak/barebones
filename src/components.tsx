@@ -6,6 +6,11 @@ import { getDevServerMessages, getSourceFilesUpdates } from './dev'
 const isDev = true
 const modules: Map<string, () => void> = new Map()
 
+let importMap: {imports: {[key:string]: string}} | null = null
+void (async () => {
+  importMap = await (await fetch(`/js/importMap.json`)).json()
+})()
+
 type Comp<P> = React.FunctionComponent<P>
 
 const Hot = <P extends object>(
@@ -15,14 +20,14 @@ const Hot = <P extends object>(
   const view = React.useRef(new BehaviorSubject<Comp<P>>(initialComponent))
   const reload = () => {
     const newSeed = (new Date()).getMilliseconds().toString()
-    import(`${module}?seed=${newSeed}`).then(m => {
+    const moduleKey = `/js/${module.replace('.\/', '')}`
+    const modulePath = importMap.imports[moduleKey]
+    import(`${modulePath}?seed=${newSeed}`).then(m => {
       view.current.next(component(m))
     })
   }
 
   modules.set(module, reload)
-
-  React.useEffect(reload, [])
 
   return <View stream={view.current}>
     {V => <V {...props as P} />}
@@ -44,9 +49,10 @@ const cook = async <P extends object>(module: string, initial: Comp<P>, componen
 if (isDev) {
   const fileUpdates = getSourceFilesUpdates(getDevServerMessages())
   fileUpdates.subscribe(f => {
+    // reload if updated file matches one of the hot modules
     const reload = Array.from(modules.entries())
                         .find(([k]) => f.fileName
-                        .endsWith(k.replace('.\/', '\/')))
+                                        .match(new RegExp(`.*${k.replace('.\/', '\/')}.(?:[a-z0-9]*.)?js$`)))
     if (reload) {
       console.info('reloading module: ', reload[0])
       reload[1]()

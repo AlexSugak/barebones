@@ -1,9 +1,5 @@
 import { filter, map, Observable, Subject } from "./rx"
 
-type FileUpdatedEvent = {
-  fileName: string 
-}
-
 const devServerWs = 'ws://localhost:3000/ws'
 
 export const getDevServerMessages = (): Observable<string> => {
@@ -23,6 +19,10 @@ export const getDevServerMessages = (): Observable<string> => {
   ws.onerror = (e => console.error('ws error', e))
 
   return serverMessages
+}
+
+type FileUpdatedEvent = {
+  fileName: string 
 }
 
 export function isFileUpdatedMessage(m: string): FileUpdatedEvent | undefined {

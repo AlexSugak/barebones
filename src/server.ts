@@ -1,10 +1,32 @@
 import express from 'express'
 import bodyParser from 'body-parser'
 import postgres from 'postgres'
+import { promises as fs } from 'fs'
+import { join } from 'path'
 import { init as authInit } from './auth/auth-server'
 import { connect } from './db/connection'
 
 const distDir: string = process.env.DIST_DIR || './'
+
+const importMapPath = join(distDir, '/js', 'importMap.json')
+
+export const loadImportMap = async () => {
+  const importMapStr = (await fs.readFile(importMapPath)).toString()
+  const importMap = JSON.parse(importMapStr)
+  
+  return { importMap, importMapStr }
+}
+
+let importMapStr: string | null = null
+let importMap: { imports: { [key: string]: string }} | null = null
+
+void (async () => {
+  const im = await loadImportMap()
+  importMapStr = im.importMapStr
+  importMap = im.importMap
+})()
+
+void loadImportMap()
 
 export function configure(app: express.Express = express()) {
   app.use(bodyParser.urlencoded({ extended: true }))  
@@ -34,6 +56,13 @@ export function renderMarkup(
   options: {
     includeIsServerRendered: boolean
   } = {includeIsServerRendered: false}): string {
+  if (!!!importMap) {
+    console.error('import map is not initialized')
+  }
+  const index = importMap.imports['/js/index']
+  if (!!!index) {
+    console.error('could not find index.js file in import map')
+  }
   return `<!DOCTYPE html>
 <html lang="en" class="text-gray-900 leading-tight">
     <head>
@@ -46,12 +75,9 @@ export function renderMarkup(
         <div id="app">${body}</div>
         ${options.includeIsServerRendered ? `<script>window.isServerRendered = true</script>` : ``}
         <script type="importmap"> 
-        {
-          "imports": { 
-          }
-        }
+        ${importMapStr}
         </script>
-        <script type="module" src="/js/index.js"></script>
+        <script type="module" src="${index}"></script>
     </body>
 </html>
   `

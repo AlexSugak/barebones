@@ -26,17 +26,22 @@ const importNoCache = (module) => {
 // e.g. when starting the dev server for the first time
 async function reloadAPIServer() {
   const jsFiles = await getFilesRecursive(jsDir, {ignore: ['lib']})
-  // XXX: convention: all server files should end with 'server.js'
-  // e.g. auth-server.js
-  const serverFiles = jsFiles.filter(fn => fn.endsWith('server.js'))
+  // XXX: convention: all server files should end with '-server.js'
+  // e.g.:
+  // auth-server.js
+  // auth-server.a3e41f5b608ff89d47801ac4db1fec3eb8949663.js
+  const serverFiles = jsFiles.filter(fn => fn.match(/.*-server.(?!spec)(?:[a-z0-9]*.)?js$/))
+  // TODO: how to hot-reload modules required for server rendering?
   console.log('server files', serverFiles)
+
+  // the /server.js is the main server entry file
+  const serverMainFile = jsFiles.filter(fn => fn.match(/.*\/server.(?!spec)(?:[a-z0-9]*.)?js$/))
 
   Promise.all(
     // reloading only /server.js will not work
     // as it will not update the modules referenced in it
     // so we need to reload all the /server.js dependencies here manually
     serverFiles
-      .filter(f => !f.includes('/server.js'))
       .map(f => {
         const modulePath = `./dist${f.replace(distDir, '')}`
         return importNoCache(modulePath)
@@ -50,7 +55,7 @@ async function reloadAPIServer() {
   .then(ms => {
     return ms.map(m => m.init || doNothing)
   })
-  .then(inits => importNoCache(`./dist/js/server.js`).then(m => [m.init, inits]))
+  .then(inits => importNoCache(serverMainFile).then(m => [m.init, inits]))
   .catch(e => console.error('failed to load server.js module', e))
   .then(
     ([initAPI, endpointInits]) => {
