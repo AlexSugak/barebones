@@ -209,14 +209,14 @@ export const LoginView = ({state, actions}: {state: LoginFormState, actions: Act
   return (
     <Layout>
       <div>
-        <form className="w-64" action="#" method="POST" onSubmit={e => {
+        <form className="form" action="#" method="POST" onSubmit={e => {
           actions.next({kind: 'submit'})
           e.preventDefault();
         }}>
-          <label htmlFor="login" className="mt-1 block text-xs font-medium text-gray-700">
+          <label htmlFor="login" className="mt-1 lblPrimary">
             Login
           </label>
-          <div className="mt-1 flex rounded-md shadow-sm">
+          <div className="mt-1">
             <input
               type="text"
               name="login" 
@@ -227,13 +227,13 @@ export const LoginView = ({state, actions}: {state: LoginFormState, actions: Act
               onChange={e => {
                 actions.next({kind: 'updateLogin', login: e.target.value})
               }}
-              className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300" 
+              className="inputPrimary" 
               />
           </div>
-          <label htmlFor="password" className="mt-1 block text-xs font-medium text-gray-700">
+          <label htmlFor="password" className="mt-1 lblPrimary">
             Password
           </label>
-          <div className="mt-1 flex rounded-md shadow-sm">
+          <div className="mt-1">
             <input
               type="password"
               name="password"
@@ -242,12 +242,13 @@ export const LoginView = ({state, actions}: {state: LoginFormState, actions: Act
               value={state.password}
               onFocus={() => actions.next({kind: 'clearErrors'})}
               onChange={e => actions.next({kind: 'updatePassword', password: e.target.value})}
-              className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300" 
+              className="inputPrimary" 
               />
           </div>
-          <div>{state.errors.map(e => <div key={e} className="text-red-600">{e}</div>)}</div>
-          <div className="pt-2 text-left">
-            <button type="submit" id="btnLogin" className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+
+          <div>{state.errors.map(e => <div key={e} className="redError">{e}</div>)}</div>
+          <div className="pt-1 text-left">
+            <button type="submit" id="btnLogin" className="btnPrimary">
               Login
             </button>
           </div>

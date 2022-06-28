@@ -1,9 +1,15 @@
-import { filter, map, Observable, Subject } from "./rx"
+import { Disposable, SubscriptionKeeper } from "./disposable"
+import { filter, map, tap, Observable, Subject } from "./rx"
 
 const devServerWs = 'ws://localhost:3000/ws'
 
+export const isDevEnv = (): boolean => {
+  // TODO: get from env var?
+  return true
+}
+
 export const getDevServerMessages = (): Observable<string> => {
-  const serverMessages = new Subject<string>() 
+  const serverMessages = new Subject<string>()
 
   const ws = new WebSocket(devServerWs)
 
@@ -22,11 +28,11 @@ export const getDevServerMessages = (): Observable<string> => {
 }
 
 type FileUpdatedEvent = {
-  fileName: string 
+  fileName: string
 }
 
 export function isFileUpdatedMessage(m: string): FileUpdatedEvent | undefined {
-  return m.startsWith('updated') ? {fileName: m.replace('updated ', '')} : undefined
+  return m.startsWith('updated') ? { fileName: m.replace('updated ', '') } : undefined
 }
 
 export const getSourceFilesUpdates = (serverMessages: Observable<string>): Observable<FileUpdatedEvent> => {
@@ -34,4 +40,29 @@ export const getSourceFilesUpdates = (serverMessages: Observable<string>): Obser
     map(isFileUpdatedMessage),
     filter(m => !!m)
   )
+}
+
+export class CssReloader implements Disposable {
+  private _subs = new SubscriptionKeeper()
+  constructor(private _messages: Observable<FileUpdatedEvent>) {
+    this._subs.push(
+      this._messages.pipe(
+        filter(f => f.fileName.endsWith('css')),
+        tap(() => {
+          console.log('detected css file update, reloading css')
+
+          var links = document.getElementsByTagName("link");
+          for (var cl in links) {
+            var link = links[cl];
+            if (link.rel === "stylesheet")
+              link.href += "";
+          }
+        })
+      ).subscribe()
+    )
+  }
+
+  dispose(): void {
+    this._subs.dispose()
+  }
 }

@@ -7,12 +7,12 @@ import { getFilesRecursive } from './scripts/common.js'
 
 const app = express()
 const port = 3000
-const jsDir = './dist/js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const distDir = __dirname + '/dist';
+const jsDir = distDir + '/js'
 process.env.DIST_DIR = distDir
 
 const doNothing = () => {}
@@ -111,10 +111,9 @@ reloadAPIServer()
 
 const files = {}
 async function checkFiles() {
-  const jsFiles = await getFilesRecursive(jsDir, {ignore: ['lib']})
+  const appFiles = await getFilesRecursive(distDir, {ignore: ['lib']})
 
-  const updatedFiles = jsFiles
-    .filter(fn => fn.endsWith('.js'))
+  const updatedFiles = appFiles
     .filter(file => {
       const stat = fs.statSync(file)
       const lastModified = files[file] || 0
@@ -134,7 +133,10 @@ async function checkFiles() {
       })
     })
 
-  await reloadAPIServer()
+  const jsFiles = updatedFiles.filter(fn => fn.endsWith('.js'))
+  if(jsFiles.length > 0) {
+    await reloadAPIServer()
+  }
 }
 
 const server = app.listen(port, () => {

@@ -1,9 +1,9 @@
 import { React } from './react'
 import { BehaviorSubject } from './rx'
 import { View } from './hoc'
-import { getDevServerMessages, getSourceFilesUpdates } from './dev'
+import { getDevServerMessages, getSourceFilesUpdates, isDevEnv } from './dev'
 
-const isDev = true
+const isDev = isDevEnv()
 const modules: Map<string, () => void> = new Map()
 
 let importMap: {imports: {[key:string]: string}} | null = null

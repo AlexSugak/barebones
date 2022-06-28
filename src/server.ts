@@ -69,9 +69,9 @@ export function renderMarkup(
         <title>Bare Bones App</title>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link href="/tailwind.css" rel="stylesheet">
+        <link href="/styles.css" rel="stylesheet">
     </head>
-    <body class="min-h-screen bg-gray-100">
+    <body>
         <div id="app">${body}</div>
         ${options.includeIsServerRendered ? `<script>window.isServerRendered = true</script>` : ``}
         <script type="importmap"> 

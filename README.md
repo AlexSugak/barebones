@@ -14,8 +14,9 @@ I wanted to throw this all away and see how far I can go with the bare minimum o
 The constraints for this repo are:
 - no webpack
 - no babel
+- no css frameworks
+- ~~no npm/yarn for dependencies (at least for now, let's see how far I can go without it)~~ use npm/yarn for few main dependencies like express, db client etc. If I have to add a dependency from npm, prefer one that does not have its own dependencies
 - use Makefile and hand-written scripts to automate things
-- ~~no npm/yarn for dependencies (at least for now, let's see how far I can go without it)~~ use npm/yarn for few dev dependencies only
 - use static local/CDN scripts
 - use TS for type-safety
 - use React for rendering the View of the app
@@ -27,7 +28,6 @@ The constraints for this repo are:
 - ReactJS (as esm module)
 - Rx.js (as esm module)
 - TypeScript
-- Tailwindcss
 - Express (for dev server and back-end)
 - ws (for hot module reloading)
 - [postgres js lib](https://github.com/porsager/postgres) for accessing postgres DB 

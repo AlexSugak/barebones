@@ -7,6 +7,7 @@ NODE_PATH=$(shell npm root -g)
 DIST_DIR=$(shell realpath ./dist)
 
 deps: ## installs dependencies
+	npm install -g fsmonitor
 	yarn --frozen-lockfile
 
 clean: ## cleans app build artifacts
@@ -39,15 +40,8 @@ hashes: ## appends hashes to js files in dist
 
 post-process: import-map replace-ts-paths ## processes build output files
 
-css: ## generates css
-	sed -i '' -e 's/"module"/"commonjs"/g' package.json
-	npx tailwindcss -i ./src/styles.css -o ./dist/tailwind.css
-	sed -i '' -e 's/"commonjs"/"module"/g' package.json
-
-css-prod: ## generates css
-	sed -i '' -e 's/"module"/"commonjs"/g' package.json
-	NODE_ENV=production npx tailwindcss -i ./src/styles.css -o ./dist/tailwind.css --minify
-	sed -i '' -e 's/"commonjs"/"module"/g' package.json
+watch-css: ## watches css changes and notifies dev server
+	fsmonitor -s -p '+*.css' $(MAKE) compile-success
 
 build: clean compile copy-lib post-process ## builds the app
 
@@ -59,8 +53,11 @@ publish: ## prepares production bundle
 dev-server: ## starts dev server
 	@node --experimental-top-level-await --experimental-policy=./dist/js/policy.json dev-server.js
 
-process-notify: post-process
+compile-success: 
 	@curl -X POST http://localhost:3000/compileSuccess
+
+process-notify: post-process
+	$(MAKE) compile-success
 	$(MAKE) test
 
 watch-hot:
@@ -69,7 +66,8 @@ watch-hot:
 dev: ## Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
 	$(MAKE) build
 	$(MAKE) dev-server &
-	$(MAKE) watch-hot
+	$(MAKE) watch-hot &
+	$(MAKE) watch-css
 
 test: ## runs all tests
 	@node --experimental-top-level-await --experimental-policy=./dist/js/policy.json ./dist/js/tests/index.js
