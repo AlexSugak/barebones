@@ -4,8 +4,9 @@ import { assertNever } from '../errors'
 import { equals } from '../eq'
 import { LoginRequest, LoginResponse } from './auth-types'
 import { Layout } from '../layout'
+import { Disposable, SubscriptionKeeper } from '../disposable'
 
-export function loginRequest({user, password}: LoginRequest): Observable<LoginResult> {
+export function loginRequest({ user, password }: LoginRequest): Observable<LoginResult> {
   return from(
     // TODO: catch request errors (e.g. no connection)
     fetch('/api/login', {
@@ -15,24 +16,24 @@ export function loginRequest({user, password}: LoginRequest): Observable<LoginRe
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({user, password})
+      body: JSON.stringify({ user, password })
     })
-    .then(response => response.json().then(body => {
-      return {response, body: body as LoginResponse}
-    }))
-    .then<LoginResult>(({response, body}) => {
-      if (response.ok) {
-        return {
-          kind: 'success',
-          user
+      .then(response => response.json().then(body => {
+        return { response, body: body as LoginResponse }
+      }))
+      .then<LoginResult>(({ response, body }) => {
+        if (response.ok) {
+          return {
+            kind: 'success',
+            user
+          }
         }
-      }
 
-      return {
-        kind: 'failure',
-        error: body.msg
-      }
-    })
+        return {
+          kind: 'failure',
+          error: body.msg
+        }
+      })
   )
 }
 
@@ -42,11 +43,11 @@ export namespace User {
   interface BaseUser {
     kind: UserKind
   }
-  
+
   interface AnonymousUser extends BaseUser {
     kind: 'anonymous',
   }
-  
+
   interface RegisteredUser extends BaseUser {
     kind: 'registered',
     name: string
@@ -57,9 +58,9 @@ export namespace User {
 
   const initialState: User = { kind: 'anonymous' }
   export class UserManager {
-    private _state: BehaviorSubject<User> = 
+    private _state: BehaviorSubject<User> =
       new BehaviorSubject(initialState)
-    
+
     constructor() {
     }
 
@@ -73,16 +74,16 @@ export namespace User {
     }
 
     login(user: string, password: string): Observable<LoginResult> {
-      return loginRequest({user, password}).pipe(
+      return loginRequest({ user, password }).pipe(
         tap(res => {
           if (res.kind === 'success') {
-            this._state.next({kind: 'registered', name: res.user})
+            this._state.next({ kind: 'registered', name: res.user })
           }
         })
       )
     }
   }
-} 
+}
 
 type ActionKind = 'updateLogin' | 'updatePassword' | 'clearErrors' | 'submit'
 
@@ -117,67 +118,73 @@ interface LoginFormState {
 }
 export type AllActions = UpdateLogin | UpdatePassword | ClearErrors | Submit
 export type Actions = Subject<AllActions>
-export const initialState: LoginFormState = { 
-  login: '', 
-  password: '', 
-  errors: [], 
+export const initialState: LoginFormState = {
+  login: '',
+  password: '',
+  errors: [],
   isSubmitted: false,
   loggedInSuccessfully: false
 }
 
-export class LoginFormStateManager {
-  private _state: BehaviorSubject<LoginFormState> = 
+export class LoginFormStateManager implements Disposable {
+  private _state: BehaviorSubject<LoginFormState> =
     new BehaviorSubject(initialState)
+  private _subs = new SubscriptionKeeper()
 
   private _updateState(state: LoginFormState) {
-    if(!equals(this._state.value, state)) {
+    if (!equals(this._state.value, state)) {
       this._state.next(state)
     }
   }
 
-  constructor(actions: Actions, onLogin: OnLogin){
-    actions.pipe(
-      withLatestFrom(this._state),
-      map(([a, s]) => {
-        switch(a.kind) {
-          case 'updateLogin':
-            return {...s, login: a.login}
-          case 'updatePassword':
-            return {...s, password: a.password}
-          case 'submit':
-            if (s.login === '') {
-              return {...s, errors: ['login required!']}
-            }
+  constructor(actions: Actions, onLogin: OnLogin) {
+    this._subs.push(
+      actions.pipe(
+        withLatestFrom(this._state),
+        map(([a, s]) => {
+          switch (a.kind) {
+            case 'updateLogin':
+              return { ...s, login: a.login }
+            case 'updatePassword':
+              return { ...s, password: a.password }
+            case 'submit':
+              if (s.login === '') {
+                return { ...s, errors: ['login required!'] }
+              }
 
-            if (s.password === '') {
-              return {...s, errors: ['password required!']}
-            }
-            return {...s, isSubmitted: true, errors: []}
-          case 'clearErrors':
-            return {...s, errors: []}
-          default:
-            assertNever(a)
-        }
-      }),
-      tap(s => this._updateState(s)),
-      switchMap(s => {
-        if (!s.isSubmitted) {
-          return EMPTY
-        }
+              if (s.password === '') {
+                return { ...s, errors: ['password required!'] }
+              }
+              return { ...s, isSubmitted: true, errors: [] }
+            case 'clearErrors':
+              return { ...s, errors: [] }
+            default:
+              assertNever(a)
+          }
+        }),
+        tap(s => this._updateState(s)),
+        switchMap(s => {
+          if (!s.isSubmitted) {
+            return EMPTY
+          }
 
-        return onLogin(s.login, s.password)
-      }),
-      tap(loginResult => {
-        const currentState = this._state.value
-        this._updateState({
-          ...currentState, 
-          isSubmitted: false,
-          loggedInSuccessfully: loginResult.kind === 'success',
-          errors: loginResult.kind === 'failure' ? [loginResult.error] : []
+          return onLogin(s.login, s.password)
+        }),
+        tap(loginResult => {
+          const currentState = this._state.value
+          this._updateState({
+            ...currentState,
+            isSubmitted: false,
+            loggedInSuccessfully: loginResult.kind === 'success',
+            errors: loginResult.kind === 'failure' ? [loginResult.error] : []
+          })
         })
-      })
-      // TODO: make this disposable !!!!
-    ).subscribe()
+      ).subscribe()
+    )
+  }
+
+  dispose(): void {
+    this._subs.dispose()
   }
 
   get state(): Observable<LoginFormState> {
@@ -195,13 +202,13 @@ interface LoginFailure {
   error: string
 }
 
-export type LoginResult = LoginSuccess | LoginFailure 
+export type LoginResult = LoginSuccess | LoginFailure
 export type OnLogin = (userName: string, password: string) => Observable<LoginResult>
 export interface LoginProps {
   onLogin: OnLogin
 }
 
-export const LoginView = ({state, actions}: {state: LoginFormState, actions: Actions}) => {
+export const LoginView = ({ state, actions }: { state: LoginFormState, actions: Actions }) => {
   if (state.loggedInSuccessfully) {
     return <Layout><div>Success!</div></Layout>
   }
@@ -210,7 +217,7 @@ export const LoginView = ({state, actions}: {state: LoginFormState, actions: Act
     <Layout>
       <div>
         <form className="form" action="#" method="POST" onSubmit={e => {
-          actions.next({kind: 'submit'})
+          actions.next({ kind: 'submit' })
           e.preventDefault();
         }}>
           <label htmlFor="login" className="mt-1 lblPrimary">
@@ -219,16 +226,16 @@ export const LoginView = ({state, actions}: {state: LoginFormState, actions: Act
           <div className="mt-1">
             <input
               type="text"
-              name="login" 
+              name="login"
               id="login"
               autoComplete="username"
-              value={state.login} 
-              onFocus={() => actions.next({kind: 'clearErrors'})}
+              value={state.login}
+              onFocus={() => actions.next({ kind: 'clearErrors' })}
               onChange={e => {
-                actions.next({kind: 'updateLogin', login: e.target.value})
+                actions.next({ kind: 'updateLogin', login: e.target.value })
               }}
-              className="inputPrimary" 
-              />
+              className="inputPrimary"
+            />
           </div>
           <label htmlFor="password" className="mt-1 lblPrimary">
             Password
@@ -240,10 +247,10 @@ export const LoginView = ({state, actions}: {state: LoginFormState, actions: Act
               id="password"
               autoComplete="current-password"
               value={state.password}
-              onFocus={() => actions.next({kind: 'clearErrors'})}
-              onChange={e => actions.next({kind: 'updatePassword', password: e.target.value})}
-              className="inputPrimary" 
-              />
+              onFocus={() => actions.next({ kind: 'clearErrors' })}
+              onChange={e => actions.next({ kind: 'updatePassword', password: e.target.value })}
+              className="inputPrimary"
+            />
           </div>
 
           <div>{state.errors.map(e => <div key={e} className="redError">{e}</div>)}</div>

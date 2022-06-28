@@ -91,6 +91,34 @@ textarea {
   /* 3 */
 }
 
+.p-05 {
+  padding: 0.5rem;
+}
+
+.m-05 {
+  margin: 0.5rem;
+}
+
+.p-1 {
+  padding: 1rem;
+}
+
+.m-1 {
+  margin: 1rem;
+}
+
+.pl-1 {
+  padding-left: 1rem;
+}
+
+.ml-1 {
+  margin-left: 1rem;
+}
+
+.pt-05 {
+  padding-top: 0.5rem;
+}
+
 .pt-1 {
   padding-top: 1rem;
 }
@@ -151,8 +179,76 @@ textarea {
   text-align: left;
 }
 
+.inline-flex {
+  display: inline-flex;
+}
+
+.flex {
+  display: flex;
+} 
+
+.flex-row {
+  flex-direction: row;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.shrink-0 {
+  flex-shrink: 0;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.relative {
+  position: relative;
+}
+
+.greenText {
+  color: rgb(74 222 128 / var(--text-opacity));
+}
+
+.redText {
+  color: rgb(248 113 113 / var(--text-opacity));
+}
+
+.greenFill {
+  fill: rgb(74 222 128);
+}
+
+.redFill {
+  fill: rgb(248 113 113);
+}
+
 .redError {
   color: rgb(220 38 38 / var(--text-opacity));
+}
+
+.grayFillDisabled {
+  color: rgb(209 213 219);
+}
+
+.grayStrokeDisabled {
+  stroke: rgb(209 213 219);
+}
+
+.blackStroke {
+  stroke: rgb(0 0 0);
+}
+
+.pointer {
+  cursor: pointer;
 }
 
 .btnPrimary {

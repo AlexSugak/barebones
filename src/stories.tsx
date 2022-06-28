@@ -1,8 +1,8 @@
 import { React } from './react'
 import { Actions, LoginFormStateManager, OnLogin } from './auth/auth-view';
 import { LoginView } from './components'
-import { delay, doNothing } from './utils'
-import { filter, tap, EMPTY, withLatestFrom, BehaviorSubject, map, switchMap, Observable, Subject, of } from './rx'
+import { delay } from './utils'
+import { filter, tap, Subject, of } from './rx'
 import { View } from './hoc';
 import { assertNever } from './errors';
 import { getDevServerMessages, getSourceFilesUpdates } from './dev'
@@ -179,7 +179,6 @@ export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapse
   const replayEvent = (e: UserEvents) => {
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set
     const el = wrapperRef.current.querySelector('#' + e.targetId)
-    console.log('element', {id: e.targetId, el})
     switch (e.kind) {
       case 'inputChange':
         nativeInputValueSetter.call(el, e.value)
@@ -187,7 +186,6 @@ export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapse
         el.dispatchEvent(iev)
         return
       case 'click':
-        console.log('clicking', el)
         const cev = new MouseEvent('click', {
           view: window,
           bubbles: true,
@@ -248,7 +246,6 @@ export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapse
       htmls: recordedHtmlsRef.current
     }
 
-    console.log('saving:', newStory)
     onSaveStory(newStory)
   }
 
@@ -259,7 +256,6 @@ export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapse
       htmls: replayedHtmlsRef.current
     }
 
-    console.log('saving:', updatedStory)
     onSaveStory(updatedStory)
   }
 
@@ -277,14 +273,14 @@ export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapse
     {hasStory && (
       <div className="flex items-center">
         <button onClick={toggleCollapse}>
-          <span className={isValid ? 'text-green-400' : 'text-red-400'}>{story.name}</span>
+          <span className={isValid ? 'greenText' : 'redText'}>{story.name}</span>
         </button>
         {!isValid && 
           <button 
-            className="pl-2"
+            className="pl-05 pointer"
             onClick={updateStory}>
-            <svg className="h-5 w-5 fill-green-400" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            <svg style={{height: "1.25rem", width: "1.25rem"}} className="greenFill" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
           </button>}
       </div>
@@ -303,81 +299,84 @@ export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapse
         </div>
       </Collapsible>
       <div>
-        <div className="flex items-center pt-2">
+        <div className="flex items-center pt-05">
           <button
-            className="inline-flex"
+            className="inline-flex pointer"
             name="play"
             onClick={replay}>
               {isReplaying 
-                ? <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                ? <svg style={{height: "1.25rem", width: "1.25rem"}} viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                   </svg>
-                : <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                : <svg style={{height: "1.25rem", width: "1.25rem"}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>}
           </button>
           <button
-            className="inline-flex"
+            className="inline-flex pointer"
             name="record"
             onClick={toggleRecord}>
               {isRecording ? 
-                <svg className="h-5 w-5 fill-red-500" viewBox="0 0 20 20">
+                <svg style={{height: "1.25rem", width: "1.25rem"}} className="redFill" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
                 </svg>
-                : <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                : <svg style={{height: "1.25rem", width: "1.25rem"}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
                 </svg>}
           </button>
           <button
-            className="inline-flex"
+            className="inline-flex pointer"
             name="showRecording"
             onClick={toggleShowRecording}>
             {showRecording 
-              ? <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              ? <svg style={{height: "1.25rem", width: "1.25rem"}} viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 2h6v4H7V5zm8 8v2h1v-2h-1zm-2-2H7v4h6v-4zm2 0h1V9h-1v2zm1-4V5h-1v2h1zM5 5v2H4V5h1zm0 4H4v2h1V9zm-1 4h1v2H4v-2z" clipRule="evenodd" />
                 </svg>
-              : <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              : <svg style={{height: "1.25rem", width: "1.25rem"}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
                 </svg>}
           </button>
-          {!hasStory && <>
-            <input 
-              name="story" 
-              type="text"
-              className="ml-1 px-1 py-1 h-6 focus:ring-indigo-500 focus:border-indigo-500 block rounded-md text-xs border-gray-300" 
-              placeholder="story name"
-              value={storyName} 
-              onChange={e => setStoryName(e.target.value)} />
+          {!hasStory && <div className="flex flex-row items-center">
+            <div>
+              <input 
+                name="story" 
+                type="text"
+                className="inputPrimary" 
+                placeholder="story name"
+                value={storyName} 
+                onChange={e => setStoryName(e.target.value)} />
+            </div>
             <button
-              className={!canSaveStory ? 'inline-flex fill-gray-300' : 'inline-flex'}
+              className={!canSaveStory ? 'grayFillDisabled inline-flex pointer' : 'inline-flex pointer'}
               disabled={!canSaveStory}
               name="saveRecording"
               onClick={saveRecording}>
               <svg 
-                className={!canSaveStory ? 'h-5 w-5 stroke-gray-300' : 'h-5 w-5 stroke-black'}
+                style={{height: "1.25rem", width: "1.25rem"}}
+                className={!canSaveStory ? 'grayStrokeDisabled' : 'blackStroke'}
                 fill="none" 
                 viewBox="0 0 24 24" 
                 >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
               </svg>
             </button>
-          </>}
+          </div>}
         </div>
         {events.length > 0 && <>
           <div>Steps:</div>
           <div>
             {events.map((e, i) => 
-              <div key={i}><span className="text-green-400">{e.kind} {e.targetId} {(e as any).value}</span></div>)}
+              <div key={i}><span className="greenText">{e.kind} {e.targetId} {(e as any).value}</span></div>)}
           </div>
         </>}
         {showRecording && <div className="relative">
           <div className="flex flex-row">{
-            states.map(s => <div className="shrink-0 px-1">{lazyChildren(s)}</div>)}</div>
-          <div className="absolute opacity-30 top-0 left-0 flex flex-row">{
-            recordedHtmls.map(h => 
-              <div className="shrink-0 px-1" dangerouslySetInnerHTML={{__html: h}} />)}
+            states.map((s, i) => <div key={i} className="shrink-0 px-1">{lazyChildren(s)}</div>)}</div>
+          <div style={{opacity: "30%", top: "0", left: "0" }} className="absolute flex flex-row">{
+            recordedHtmls.map((h, i) => 
+              <div key={i} className="shrink-0 px-1" dangerouslySetInnerHTML={{__html: h}} />)}
           </div>
         </div>
         }
@@ -411,12 +410,12 @@ const LoginStory = ({story, composerCollapsed = true, onSaveStory}:
 }
 
 const Plus = ({}) =>
-  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg style={{height: "1.5rem", width: "1.5rem"}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 
 const Minus = ({}) =>
-  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg style={{height: "1.5rem", width: "1.5rem"}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 
@@ -438,7 +437,7 @@ const Collapsible = ({
     <div className={className}>
       <div>
         <button
-          className={'inline-flex'}
+          className={'inline-flex pointer'}
           name="expand"
           onClick={() => setCollapsed(!collapsed)}>
           {collapsed ? expand : collapse}
@@ -499,7 +498,7 @@ export const Stories = ({}) => {
   React.useEffect(() => getStories(), [])
 
   return (
-    <div className='p-2'> 
+    <div className='p-05'> 
       <Collapsible className='pl-1'>
         <LoginStory composerCollapsed={false} onSaveStory={saveStory} />
       </Collapsible>

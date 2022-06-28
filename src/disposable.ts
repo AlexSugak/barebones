@@ -4,6 +4,12 @@ export interface Disposable {
   dispose(): void
 }
 
+export namespace Disposable {
+  export const EMPTY: Disposable = {
+    dispose: () => {}
+  } 
+}
+
 export class SubscriptionKeeper implements Disposable {
   private _subs: (Subscription | Disposable)[] = []
 

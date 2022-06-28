@@ -6,20 +6,17 @@ import { Login } from './auth/auth-page'
 import { tap } from './rx'
 import { Stories } from './stories'
 import { CssReloader, getDevServerMessages, getSourceFilesUpdates, isDevEnv } from './dev'
+import { useDisposable } from './hooks'
+import { Disposable } from './disposable'
 
 const router = new RouterState()
 const user = new User.UserManager()
-
-if (isDevEnv()){
-  // watch for css changes and reload it if in dev mode
-  const cssReloader = new CssReloader(getSourceFilesUpdates(getDevServerMessages()))
-}
 
 const login = (userName: string, password: string) => {
   return user.login(userName, password).pipe(
     tap(r => {
       if (r.kind === 'success') {
-        router.navigateTo('/', {})    
+        router.navigateTo('/', {})
       }
     })
   )
@@ -30,9 +27,15 @@ const views: Views = {
   stories: () => <Stories />
 }
 
-export const App = ({}) => {
+export const App = ({ }) => {
+  // watch for css changes and reload it if in dev mode
+  useDisposable(
+    isDevEnv() 
+    ? new CssReloader(getSourceFilesUpdates(getDevServerMessages())) 
+    : Disposable.EMPTY)
+
   const matchLocation = restrictAnonymous(matchLocationToView(views), () => user.isLoggedIn())
-  
+
   return (<>
     <Router location={router.location} match={matchLocation} />
   </>)
