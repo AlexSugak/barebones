@@ -19,3 +19,7 @@ declare module 'lib/react-server' {
 declare module 'lib/rxjs' {
     export * from 'rxjs';
 }
+
+declare module 'lib/monaco' {
+  export * from 'monaco'
+}

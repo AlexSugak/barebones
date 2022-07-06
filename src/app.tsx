@@ -8,6 +8,7 @@ import { Stories } from './stories'
 import { CssReloader, getDevServerMessages, getSourceFilesUpdates, isDevEnv } from './dev'
 import { useDisposable } from './hooks'
 import { Disposable } from './disposable'
+import { Editor } from './editor/editor-page'
 
 const router = new RouterState()
 const user = new User.UserManager()
@@ -24,7 +25,8 @@ const login = (userName: string, password: string) => {
 
 const views: Views = {
   login: () => <Login onLogin={login} />,
-  stories: () => <Stories />
+  stories: () => <Stories />,
+  editor: () => <Editor />,
 }
 
 export const App = ({ }) => {

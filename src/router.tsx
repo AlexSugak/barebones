@@ -19,6 +19,7 @@ import { assertNever } from './errors'
   '/posts/(?<id>.*)',
   '/calendar/(?<year>.*)/(?<month>.*)',
   '/not-found',
+  '/editor',
   '/admin',
   '/stories',
   '/login'
@@ -130,6 +131,7 @@ export const restrictAnonymous: (inner: MathLocation, isLoggedIn: () => boolean)
 export interface Views {
   login: () => React.ReactElement,
   stories: () => React.ReactElement,
+  editor: () => React.ReactElement,
 }
 
 export function matchLocationToView(views: Views): MathLocation {
@@ -152,6 +154,8 @@ export function matchLocationToView(views: Views): MathLocation {
         return <div>Admin panel</div>
       case '/stories':
         return views.stories()
+      case '/editor':
+        return views.editor()
       default:
         assertNever(p)
     }

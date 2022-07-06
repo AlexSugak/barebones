@@ -38,15 +38,20 @@ import { getFilesRecursive } from './common.js'
     })
   )
 
+  const importMapOverrides = [
+  ]
   const importMap = {
     imports: Object.fromEntries(
-      Array.from(importStrings.values())
+      Array
+        .from(importStrings.values())
         .filter(i => !i.includes('/lib/'))
         .map(i => {
           const abs = resolve(dirDist)
           const relative = i.replace(abs, '')
           return [relative, filesByNames.get(i).replace(abs, '')]
-        }))
+        })
+        .concat(importMapOverrides),
+    )
   }
 
   await fs.promises.writeFile(`${dir}/importMap.json`, JSON.stringify(importMap, null, 2))
@@ -58,13 +63,15 @@ import { getFilesRecursive } from './common.js'
         cascade: true,
         integrity: true,
         dependencies: Object.fromEntries(
-          Array.from(importStrings.values())
+          Array
+            .from(importStrings.values())
             .filter(i => !i.includes('/lib/'))
             .map(i => {
               const abs = resolve(dir)
               const relative = i.replace(abs, '.')
               return [relative, filesByNames.get(i).replace(abs, '.')]
-            }))
+            })
+        )
       }
     }
   }

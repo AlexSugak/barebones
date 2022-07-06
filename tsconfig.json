@@ -16,13 +16,15 @@
       "baseUrl": ".",
       "paths": {
           "prop-types": ["node_modules/@types/prop-types"],
+          "module": ["node_modules/@types/node/module.d.ts"],
           "react": ["node_modules/@types/react"],
           "react-dom": ["node_modules/@types/react-dom"],
-          "rxjs": ["types/rx"],
-          "module": ["node_modules/@types/node/module.d.ts"],
           "lib/react": ["lib/react/dev/index.js"],
           "lib/react-server": ["lib/react/dev/react-dom-server-browser.js"],
-          "lib/rxjs": ["lib/rxjs/rxjs.min.js"]
+          "rxjs": ["types/rx"],
+          "lib/rxjs": ["lib/rxjs/rxjs.min.js"],
+          "monaco": ["lib/monaco/esm/vs/editor/editor.api.d.ts"],
+          "lib/monaco": ["nothing.js"]
       }
   },
   "include": [
