@@ -68,10 +68,8 @@ async function reloadAPIServer() {
       if(app._router) {
         app._router.stack = app._router.stack.filter(l => doNotDelete.includes(l.name))
       }
-      // api endpoints must go first
-      // before the "serve static" wildcard endpoint added in initDevApi  
+
       initAPI(app, [...endpointInits, initDevApi])
-      // console.log(app._router)
     }
   )
   .catch(e => console.error('error reloading api server', e))
@@ -140,7 +138,7 @@ async function checkFiles() {
 }
 
 const server = app.listen(port, () => {
-  console.log(`App listening at http://localhost:${port}`)
+  console.log(`Dev server listening at http://localhost:${port}`)
 })
 
 const wss = new WebSocketServer({

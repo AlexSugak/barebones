@@ -20,6 +20,7 @@ interface DBUser {
 }
 
 const serverRender = (app: express.Express) => {
+  //TODO: use our router to match express requests
   app.get('*', (req, resp, next) => {
     const matched = matchLocationToPath(req.url)
     if (matched.path === '/login') {

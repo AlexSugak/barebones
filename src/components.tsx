@@ -6,6 +6,20 @@ import { getDevServerMessages, getSourceFilesUpdates, isDevEnv } from './dev'
 const isDev = isDevEnv()
 const modules: Map<string, () => void> = new Map()
 
+if (isDev) {
+  const fileUpdates = getSourceFilesUpdates(getDevServerMessages())
+  fileUpdates.subscribe(f => {
+    // reload if updated file matches one of the hot modules
+    const reload = Array.from(modules.entries())
+                        .find(([k]) => f.fileName
+                                        .match(new RegExp(`.*${k.replace('.\/', '\/')}.(?:[a-z0-9]*.)?js$`)))
+    if (reload) {
+      console.info('reloading module: ', reload[0])
+      reload[1]()
+    }
+  })
+}
+
 let importMap: {imports: {[key:string]: string}} | null = null
 void (async () => {
   importMap = await (await fetch(`/js/importMap.json`)).json()
@@ -34,49 +48,27 @@ const Hot = <P extends object>(
   </View>
 }
 
-const makeHot = <P extends object>(module: string, initial: Comp<P>, inner: (module: any) => Comp<P>): Comp<P> => {
-  return (p: P) => <Hot module={module} initialComponent={initial} component={inner} {...p} />
-}
-
-const cook = async <P extends object>(module: string, initial: Comp<P>, component: (module: any) => Comp<P>): Promise<Comp<P>> => {
+const hotImport = <P extends object>(module: string, initial: Comp<P>, m: (module: any) => Comp<P>) => {
   if (isDev) {
-    return Promise.resolve(makeHot(module, initial, component))
+    return (p: P) => <Hot module={module} initialComponent={initial} component={m} {...p} />
   } else {
-    return await import(module).then(component)
+    return initial
   }
 }
 
-if (isDev) {
-  const fileUpdates = getSourceFilesUpdates(getDevServerMessages())
-  fileUpdates.subscribe(f => {
-    // reload if updated file matches one of the hot modules
-    const reload = Array.from(modules.entries())
-                        .find(([k]) => f.fileName
-                                        .match(new RegExp(`.*${k.replace('.\/', '\/')}.(?:[a-z0-9]*.)?js$`)))
-    if (reload) {
-      console.info('reloading module: ', reload[0])
-      reload[1]()
-    }
-  })
-}
-
-const hotImport = async <P extends object>(module: string, initial: Comp<P>, m: (module: any) => Comp<P>) => 
-  await cook(module, initial, m)
-
 // TODO: make this type-safe
 import { Router as RouterComp } from './router'
-const Router = await hotImport('./router', RouterComp, m => m.Router)
+const Router = hotImport('./router', RouterComp, m => m.Router)
 
 import { Link as LinkComp } from './router'
-const Link = await hotImport('./router', LinkComp, m => m.Link)
+const Link = hotImport('./router', LinkComp, m => m.Link)
 
 import { LoginView as LoginViewComp } from './auth/auth-view'
-const LoginView = await hotImport('./auth/auth-view', LoginViewComp, m => m.LoginView)
+const LoginView = hotImport('./auth/auth-view', LoginViewComp, m => m.LoginView)
 
 import { Layout as LayoutComp } from './layout'
-const Layout = await hotImport('./layout', LayoutComp, m => m.Layout)
+const Layout = hotImport('./layout', LayoutComp, m => m.Layout)
 
-// TODO: do not make components hot if not isDev
 export {
   Router,
   Link,

@@ -71,6 +71,8 @@ export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapse
     }
   }
 
+  // TODO: refactor to be readable by human being
+
   const hasStory = !!story
   const wrapperRef = React.useRef<HTMLDivElement>()
   const [events, setEvents] = React.useState<UserEvents[]>(hasStory ? story.events : [])

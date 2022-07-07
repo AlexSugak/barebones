@@ -121,7 +121,7 @@ export const restrictAnonymous: (inner: MathLocation, isLoggedIn: () => boolean)
   if (!isLoggedIn() && location === '/admin') {
     // TODO: find a better way to say what should be rendered
     // TODO: we should do a redirect instead
-    // TODO: have a black list of urls to block anonymous users from 
+    // TODO: have a list of private urls to block anonymous users from 
     // TODO: return user to the target location after successful login
     return inner('/login')
   }
