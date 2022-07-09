@@ -61,12 +61,17 @@ type RecorderProps<T> = PropsWithLazyChildren<T> & {
 export const Recorder = <T, >({lazyChildren, childProps, story, composerCollapsed, onSaveStory}: RecorderProps<T>): React.ReactElement => {
   let [isValid, setIsValid] = React.useState(true)
   const checkValid = () => {
-    if (recordedHtmlsRef.current.length === replayedHtmlsRef.current.length) {
-      const zip = recordedHtmlsRef.current.map((rec, i) => [rec, replayedHtmlsRef.current[i]])
-      console.log('validating', zip)
+    const recorded = recordedHtmlsRef.current
+    const replayed = replayedHtmlsRef.current
+    if (recorded.length === replayed.length) {
+      const zip = recorded.map((rec, i) => [rec, replayed[i]])
       const isSame = zip.every(([rec, rep]) => rec === rep)
+      if (!isSame) {
+        console.log('recorded html != replayed html', zip)
+      }
       setIsValid(isSame)
     } else {
+      console.log('recorded html count != replayed html count', {recorded, replayed})
       setIsValid(false)
     }
   }
