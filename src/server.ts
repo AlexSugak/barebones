@@ -92,7 +92,7 @@ export function init(
   endpoints: EndpointInit[] = defaultEndpoints(),
   dependencies: Dependencies = buildDependencies()) {
 
-  console.log('starting app server', { distDir })
+  console.log('starting barebones back-end', { distDir })
 
   configure(app)
 
@@ -115,4 +115,5 @@ export function init(
     res.status(500).send('Error processing request!')
     next(err)
   })
+  console.log('done')
 }

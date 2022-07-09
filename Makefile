@@ -21,7 +21,9 @@ compile: ## compiles the app source code
 	@echo 'done'
 
 copy-lib: ## copies lib folder to output
-	@cp -R ./lib ./dist/js/ 
+	@echo 'copying lib folder to output'
+	@mkdir -p ./dist/js/ && cp -R ./lib ./dist/js/
+	@echo 'done'
 
 add-js: ## replaces "import from './module'" -> "import from './module.js'" \
 				and         "Import('./module')" -> "Import('./module.js')" \
@@ -41,39 +43,43 @@ hashes: ## appends hashes to js files in dist
 post-process: import-map replace-ts-paths ## processes build output files
 
 watch-css: ## watches css changes and notifies dev server
-	fsmonitor -s -p '+*.css' $(MAKE) compile-success
+	@fsmonitor -s -p '+*.css' $(MAKE) compile-success
 
 build: clean compile copy-lib post-process ## builds the app
 
 publish: ## prepares production bundle
-	$(MAKE) build
-	$(MAKE) hashes
-	$(MAKE) import-map
+	@$(MAKE) build
+	@$(MAKE) hashes
+	@$(MAKE) import-map
 
 dev-server: ## starts dev server
-	@node --experimental-top-level-await --experimental-policy=./dist/js/policy.json dev-server.js
+	@node --no-warnings --experimental-top-level-await --experimental-policy=./dist/js/policy.json dev-server.js
 
 compile-success: 
 	@curl -X POST http://localhost:3000/compileSuccess
 
 process-notify: post-process
-	$(MAKE) compile-success
-	$(MAKE) test
+	@$(MAKE) compile-success
+	@$(MAKE) test
 
 watch-hot:
 	@./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-notify"
 
 dev: ## Builds app, serves it, starts dev server and notifies app via web socket every time src files are changed
-	$(MAKE) build
-	$(MAKE) dev-server &
+	@$(MAKE) build
+	@$(MAKE) dev-server &
 	$(MAKE) watch-hot &
 	$(MAKE) watch-css
 
 test: ## runs all tests
-	@node --experimental-top-level-await --experimental-policy=./dist/js/policy.json ./dist/js/tests/index.js
+	@node --no-warnings --experimental-top-level-await --experimental-policy=./dist/js/policy.json ./dist/js/tests/index.js
 
-process-test: post-process test
+process-test: 
+	@$(MAKE) post-process
+	@$(MAKE) test
 test-watch: ## runs all tests every time a file under ./src changes
+	@$(MAKE) clean
+	@$(MAKE) copy-lib
 	@./node_modules/.bin/tsc-watch --onSuccess "$(MAKE) process-test" 
 
 docker-down: ## shuts down docker compose
