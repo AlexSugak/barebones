@@ -4,7 +4,7 @@ import { request, withDatabase, withWebServer } from '../tests/server.spec'
 export const specs = [
   spec(
     'login server', [
-      test('server should render static logic markup', async () => {
+      test('server should render static login markup', async () => {
         await withDatabase(async sql =>
           await withWebServer(
             { sql },

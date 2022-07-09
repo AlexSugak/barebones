@@ -32,7 +32,7 @@ async function reloadAPIServer() {
   // auth-server.a3e41f5b608ff89d47801ac4db1fec3eb8949663.js
   const serverFiles = jsFiles.filter(fn => fn.match(/.*-server.(?!spec)(?:[a-z0-9]*.)?js$/))
   // TODO: how to hot-reload modules required for server rendering?
-  console.log('server files', serverFiles)
+  // console.log('server files', serverFiles)
 
   // the /server.js is the main server entry file
   const serverMainFile = jsFiles.filter(fn => fn.match(/.*\/server.(?!spec)(?:[a-z0-9]*.)?js$/))
@@ -46,7 +46,7 @@ async function reloadAPIServer() {
         const modulePath = `./dist${f.replace(distDir, '')}`
         return importNoCache(modulePath)
                 .then(m => {
-                  console.log('reloaded', modulePath)
+                  // console.log('reloaded', modulePath)
                   return m
                 })
                 .catch(e => console.error('failed to load module: ' + modulePath, e))

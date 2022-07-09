@@ -7,12 +7,12 @@ import { useDisposable } from '../hooks'
 
 export const Login = ({onLogin}: LoginProps) => {
   const actions: Actions = new Subject()
-  const sm = new LoginFormStateManager(actions, onLogin)
+  const model = new LoginFormStateManager(actions, onLogin)
 
-  useDisposable(sm)
+  useDisposable(model)
 
   return (
-    <View stream={sm.state}>
+    <View stream={model.state}>
       { s => <LoginView state={s} actions={actions} /> }
     </View>
   )
