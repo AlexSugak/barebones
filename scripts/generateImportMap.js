@@ -44,7 +44,7 @@ import { getFilesRecursive } from './common.js'
     imports: Object.fromEntries(
       Array
         .from(importStrings.values())
-        .filter(i => !i.includes('/lib/'))
+        .filter(i => !i.includes('/lib/') && filesByNames.has(i))
         .map(i => {
           const abs = resolve(dirDist)
           const relative = i.replace(abs, '')
@@ -65,7 +65,7 @@ import { getFilesRecursive } from './common.js'
         dependencies: Object.fromEntries(
           Array
             .from(importStrings.values())
-            .filter(i => !i.includes('/lib/'))
+            .filter(i => !i.includes('/lib/') && filesByNames.has(i))
             .map(i => {
               const abs = resolve(dir)
               const relative = i.replace(abs, '.')
