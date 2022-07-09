@@ -137,6 +137,18 @@ export class LoginFormStateManager implements Disposable {
     }
   }
 
+  private _validate(state: LoginFormState): string[] {
+    if (state.login === '') {
+      return ['login required!']
+    }
+
+    if (state.password === '') {
+      return ['password required!']
+    }
+
+    return []
+  }
+
   constructor(actions: Actions, onLogin: OnLogin) {
     this._subs.push(
       actions.pipe(
@@ -148,13 +160,11 @@ export class LoginFormStateManager implements Disposable {
             case 'updatePassword':
               return { ...s, password: a.password }
             case 'submit':
-              if (s.login === '') {
-                return { ...s, errors: ['login required!'] }
+              const errors = this._validate(s)
+              if (errors.length > 0) {
+                return { ...s, errors }
               }
 
-              if (s.password === '') {
-                return { ...s, errors: ['password required!'] }
-              }
               return { ...s, isSubmitted: true, errors: [] }
             case 'clearErrors':
               return { ...s, errors: [] }
