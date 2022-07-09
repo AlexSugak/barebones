@@ -5,17 +5,17 @@
   "version": "0.1.0",
   "dependencies": {
     "postgres": "porsager/postgres#esm",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "body-parser": "^1.19.0",
+    "ws": "^8.2.3"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
     "@types/node": "^16.11.11",
     "@types/react": "^17.0.20",
     "@types/react-dom": "^17.0.9",
-    "body-parser": "^1.19.0",
     "tsc-watch": "^4.5.0",
-    "typescript": "^4.5.2",
-    "ws": "^8.2.3"
+    "typescript": "^4.5.2"
   },
   "repository": "https://github.com/AlexSugak/barebones",
   "author": "aleksandr.sugak@gmail.com",
