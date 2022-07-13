@@ -1,7 +1,7 @@
 import express from 'express'
 import http from 'http'
 import { Expect, test, spec } from '../spec'
-import { buildDependencies, defaultEndpoints, Dependencies, init } from '../server'
+import { buildDependencies, defaultEndpoints, Dependencies, initEndpoints } from '../server'
 import postgres from 'postgres'
 import { connect } from '../db/connection'
 import { dbSchema } from '../db/schema'
@@ -94,7 +94,7 @@ export async function withWebServer(
   ) {
     _port = _port + 1
   const app = express()
-  init(app, defaultEndpoints(), dependencies)
+  initEndpoints(app, defaultEndpoints(), dependencies)
   const server = app.listen(_port)
 
   let resp: Response

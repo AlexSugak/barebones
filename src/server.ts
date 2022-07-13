@@ -1,9 +1,11 @@
+import * as http from 'http'
 import express from 'express'
 import bodyParser from 'body-parser'
 import postgres from 'postgres'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { init as authInit } from './auth/auth-server'
+import { initWS as editorWS } from './editor/editor-server'
 import { connect } from './db/connection'
 
 const distDir: string = process.env.DIST_DIR || './'
@@ -35,6 +37,8 @@ export function configure(app: express.Express = express()) {
 
 export type EndpointInit = (dependencies: Dependencies, app: express.Express) => void
 
+export type WSInit = (dependencies: Dependencies, server: http.Server) => void
+
 export interface Dependencies {
   readonly sql: postgres.Sql<{}>
 }
@@ -49,7 +53,13 @@ export function defaultEndpoints(): EndpointInit[] {
   return [
     authInit
   ]
-} 
+}
+
+export function defaultWS(): WSInit[] {
+  return [
+    editorWS
+  ]
+}
 
 export function renderMarkup(
   body: string, 
@@ -87,12 +97,12 @@ export function renderLoader(): string {
   return `Loading...`
 }
 
-export function init(
+export function initEndpoints(
   app: express.Express = express(), 
   endpoints: EndpointInit[] = defaultEndpoints(),
   dependencies: Dependencies = buildDependencies()) {
 
-  console.log('starting barebones back-end', { distDir })
+  console.log('configuring barebones back-end', { distDir })
 
   configure(app)
 
@@ -117,3 +127,16 @@ export function init(
   })
   console.log('done')
 }
+
+export function initWS(
+  server: http.Server, 
+  wsis: WSInit[] = defaultWS(),
+  dependencies: Dependencies = buildDependencies()) {
+
+  console.log('configuring bare bones web sockets', { distDir })
+  wsis.forEach(e => e(dependencies, server))
+
+  console.log('done')
+}
+
+// TODO: add main function to run app server on itself, not through dev-server.js

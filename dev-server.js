@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { getFilesRecursive } from './scripts/common.js'
 
 const app = express()
+let server = null
 const port = 3000
 
 const __filename = fileURLToPath(import.meta.url);
@@ -55,10 +56,10 @@ async function reloadAPIServer() {
   .then(ms => {
     return ms.map(m => m.init || doNothing)
   })
-  .then(inits => importNoCache(serverMainFile).then(m => [m.init, inits]))
+  .then(inits => importNoCache(serverMainFile).then(m => [m.initEndpoints, inits]))
   .catch(e => console.error('failed to load server.js module', e))
   .then(
-    ([initAPI, endpointInits]) => {
+    ([initApp, endpointInits]) => {
       console.log('reloading api server')
       
       const doNotDelete = [
@@ -69,7 +70,7 @@ async function reloadAPIServer() {
         app._router.stack = app._router.stack.filter(l => doNotDelete.includes(l.name))
       }
 
-      initAPI(app, [...endpointInits, initDevApi])
+      initApp(app, [...endpointInits, initDevApi])
     }
   )
   .catch(e => console.error('error reloading api server', e))
@@ -137,19 +138,27 @@ async function checkFiles() {
   }
 }
 
-const server = app.listen(port, () => {
+server = app.listen(port, () => {
   console.log(`Dev server listening at http://localhost:${port}`)
 })
 
+// app WS server
+import(jsDir + '/server.js').then(s => s.initWS(server))
+
+// hot reload server
+const hotWSPath = '/ws'
 const wss = new WebSocketServer({
   noServer: true,
-  path: "/ws",
+  path: hotWSPath,
 })
 
 server.on("upgrade", (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (websocket) => {
-    wss.emit("connection", websocket, request)
-  })
+  if (request.url === hotWSPath) {
+    console.log("dev server ws connecting")
+    wss.handleUpgrade(request, socket, head, (websocket) => {
+      wss.emit("connection", websocket, request)
+    })
+  }
 })
 
 wss.on('connection', (ws) => {

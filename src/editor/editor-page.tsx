@@ -1,5 +1,45 @@
 import { React } from '../react'
 import * as monaco from '../monaco'
+import { Disposable } from '../disposable'
+import { filter, map, tap, Observable, Subject } from "../rx"
+import { useDisposable, useSubscription } from '../hooks'
+
+// TODO: do not hardcode localhost
+const editorWs = 'ws://localhost:3000/editor/ws'
+
+interface EditorWS extends Disposable{
+  messages: Observable<string>
+  send(msg: string): void
+}
+
+const getEditorWS = (): EditorWS => {
+  const serverMessages = new Subject<string>()
+
+  const ws = new WebSocket(editorWs)
+
+  ws.onopen = (() => {
+    console.info('opening editor ws')
+    ws.send('hello from client editor')
+  })
+
+  ws.onclose = (() => {
+    console.info('closing editor ws')
+  })
+
+  ws.onmessage = (e => {
+    console.info('from editor server: ', e.data)
+    serverMessages.next(e.data)
+  })
+
+  ws.onerror = (e => console.error('editor ws error', e))
+
+  return {
+    messages: serverMessages,
+    send: msg => ws.send(msg),
+    dispose: () => ws.close()
+  }
+}
+
 
 export const Editor = ({}) => {
   const editorElementRef = React.useRef<HTMLDivElement | undefined>(undefined)
@@ -59,6 +99,10 @@ export const Editor = ({}) => {
   React.useEffect(() => {
     (window as any).initEditor = initEditor
   }, [])
+
+  const editorWS = useDisposable(getEditorWS())
+  // TODO: handle messages from server
+  // useSubscription(editorWS.messages)
 
   return (
     <div 

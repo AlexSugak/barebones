@@ -8,7 +8,11 @@ export const useSubscription = <T>(obs: Observable<T>) =>
     return () => sub.unsubscribe()
   }, [obs])
 
-export const useDisposable = (disp: Disposable) =>
-  React.useEffect(() => {
+export const useDisposable = <T extends Disposable>(disp: T) => {
+    React.useEffect(() => {
     return () => disp.dispose()
   }, [disp])
+
+  return disp
+}
+

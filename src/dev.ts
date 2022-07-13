@@ -1,6 +1,7 @@
 import { Disposable, SubscriptionKeeper } from "./disposable"
 import { filter, map, tap, Observable, Subject } from "./rx"
 
+// TODO: do not hardcode localhost
 const devServerWs = 'ws://localhost:3000/ws'
 
 export const isDevEnv = (): boolean => {
