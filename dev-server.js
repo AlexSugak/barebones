@@ -9,11 +9,12 @@ const app = express()
 let server = null
 const port = 3000
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
-const distDir = __dirname + '/dist';
+const distDir = __dirname + '/dist'
 const jsDir = distDir + '/js'
+const srcDir = __dirname + '/src'
 process.env.DIST_DIR = distDir
 
 const doNothing = () => {}
@@ -78,6 +79,9 @@ async function reloadAPIServer() {
 
 function initDevApi(_dependencies, app) {
   console.log('configuring dev endpoints')
+  // support source maps
+  app.use('/src', express.static(srcDir))
+
   app.post('/compileSuccess', (req, res) => {
     console.log('/compileSuccess')
     checkFiles()

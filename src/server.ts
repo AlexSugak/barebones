@@ -115,7 +115,8 @@ export function initEndpoints(
   app.use(express.static(distDir))
 
   // index.html
-  app.get('*', function(_reg, res) {
+  app.get('*', function(reg, res) {
+    console.log('index.html <- ', reg.url)
     res.send(renderMarkup(renderLoader()))
     return res.status(200)
   })
