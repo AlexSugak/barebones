@@ -1,29 +1,47 @@
 import * as http from 'http'
+import fs from 'fs'
+import path from 'path'
 import { WebSocketServer } from 'ws';
 import { Dependencies, EndpointInit, WSInit } from '../server'
-import { Subject } from '../rx'
 
-const wsPath = '/editor/ws'
+const tmpDir: string = process.env.TMP_DIR || './tmp'
 
-const wss = new WebSocketServer({
+const editorWSPath = '/editor/ws'
+
+const editorWSS = new WebSocketServer({
   noServer: true,
-  path: wsPath,
+  path: editorWSPath,
 })
 
-const log = (message: string, data?: any) => console.log(`[editor] ${message}`, data)
-const warn = (message: string, data?: any) => console.warn(`[editor] ${message}`, data)
+const videoWSPath = '/editor/video/ws'
+
+const videoWSS = new WebSocketServer({
+  noServer: true,
+  path: videoWSPath,
+})
+
+const log = (message: string, data?: any) => data ? console.log(`[editor] ${message}`, data) : console.log(`[editor] ${message}`)
+const warn = (message: string, data?: any) => data ? console.warn(`[editor] ${message}`, data) : console.warn(`[editor] ${message}`)
 
 export const initWS: WSInit = (dependencies: Dependencies, server: http.Server) => {
   server.on("upgrade", (request, socket, head) => {
-    if (request.url === wsPath) {
-      log(`connecting: ${wsPath}`)
-      wss.handleUpgrade(request, socket, head, (websocket) => {
-        wss.emit("connection", websocket, request)
+    if (request.url === editorWSPath) {
+      log(`connecting: ${editorWSPath}`)
+      editorWSS.handleUpgrade(request, socket, head, (websocket) => {
+        editorWSS.emit("connection", websocket, request)
+      })
+    }
+
+    if (request.url === videoWSPath) {
+      log(`connecting: ${videoWSPath}`)
+
+      videoWSS.handleUpgrade(request, socket, head, (websocket) => {
+        videoWSS.emit("connection", websocket, request)
       })
     }
   })
 
-  wss.on('connection', (ws) => {
+  editorWSS.on('connection', (ws) => {
     ws.on('message', (message) => {
       log('received: %s', message)
       // TODO: handle editor messages
@@ -32,5 +50,21 @@ export const initWS: WSInit = (dependencies: Dependencies, server: http.Server) 
     })
   
     ws.send('Hi from editor server')
+  })
+
+  videoWSS.on('connection', (ws) => {
+    const fileName = `${tmpDir}/video.webm`
+    fs.mkdirSync(path.dirname(fileName), { recursive: true });
+    try {
+      fs.rmSync(fileName)
+    } catch {}
+
+    const fileStream = fs.createWriteStream(`${tmpDir}/video.webm`, { flags: 'a' });
+    log(`starting to write video stream to file: ${fileName}`)
+
+    ws.on('message', (message) => {
+      // Only raw blob data can be sent
+      fileStream.write(Buffer.from(new Uint8Array(message)));
+    })
   })
 }

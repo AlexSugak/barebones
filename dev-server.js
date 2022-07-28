@@ -12,10 +12,12 @@ const port = 3000
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+const tmpDir = __dirname + '/tmp'
 const distDir = __dirname + '/dist'
 const jsDir = distDir + '/js'
 const srcDir = __dirname + '/src'
 process.env.DIST_DIR = distDir
+process.env.TMP_DIR = tmpDir
 
 const doNothing = () => {}
 const importNoCache = (module) => {

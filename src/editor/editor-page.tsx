@@ -4,6 +4,7 @@ import { Disposable } from '../disposable'
 import * as Rx from "../rx"
 import { useDisposable, useSubscription } from '../hooks'
 import { invariant } from '../errors'
+import { Player } from './player'
 
 // TODO: do not hardcode localhost
 const editorWs = 'ws://localhost:3000/editor/ws'
@@ -229,16 +230,21 @@ export const Editor = ({}) => {
   // useSubscription(editorWS.messages)
 
   return (
-    <div>
-      <div 
-        id="editorContainer" 
-        ref={editorElementRef} 
-        style={{width: '400px', height: '200px', margin: '10px', border: '1px solid grey'}}>
+    <div className='inline-flex flex-column m-1'>
+      <div className='inline-flex'>
+        <div 
+          id="editorContainer" 
+          ref={editorElementRef} 
+          style={{width: '300px', height: '200px', border: '1px solid grey'}}>
+        </div>
+        <div className='pl-1'>
+          <Player />
+        </div>
       </div>
       {/* <div style={{margin: '10px'}}>
         <button className="btnPrimary" onClick={undoAll}>Undo all</button>
       </div> */}
-      <div style={{margin: '10px', width: '400px'}}>
+      <div style={{width: '100%'}}>
         <TimeRange positionListener={timePosition} />
       </div>
     </div>
