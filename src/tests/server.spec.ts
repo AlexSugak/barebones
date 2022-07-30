@@ -60,7 +60,6 @@ export function request(options: {
   })
 }
 
-
 let _schemaIndex = 1
 export async function withDatabase(
   test: (sql: postgres.Sql<{}>) => Promise<void>
