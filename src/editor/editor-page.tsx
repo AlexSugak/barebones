@@ -7,6 +7,7 @@ import { invariant } from '../errors'
 import { Player } from './player'
 
 // TODO: do not hardcode localhost
+// TODO: should be wss
 const editorWs = 'ws://localhost:3000/editor/ws'
 
 interface EditorWS extends Disposable{

@@ -1,7 +1,8 @@
 import express from 'express'
 import http from 'http'
+import { WebSocket } from 'ws'
 import { Expect, test, spec } from '../spec'
-import { buildDependencies, defaultEndpoints, Dependencies, initEndpoints } from '../server'
+import { buildDependencies, defaultEndpoints, defaultWS, Dependencies, initEndpoints, initWS, WSInit } from '../server'
 import postgres from 'postgres'
 import { connect } from '../db/connection'
 import { dbSchema } from '../db/schema'
@@ -92,7 +93,8 @@ export async function withWebServer(
     makeRequest: (port: number) => Promise<Response>,
     assert: (resp: Response) => void
   ) {
-    _port = _port + 1
+
+  _port = _port + 1
   const app = express()
   initEndpoints(app, defaultEndpoints(), dependencies)
   const server = app.listen(_port)
@@ -106,6 +108,21 @@ export async function withWebServer(
   
   server.close()
   assert(resp)
+}
+
+export async function withWSServer(
+    dependencies: Dependencies,
+    assert: (port: number) => Promise<void>,
+    wsis: WSInit[] = defaultWS(),
+  ) {
+
+  _port = _port + 1
+  const app = express()
+  const server = app.listen(_port)
+  initWS(server, wsis, dependencies)
+
+  await assert(_port)
+  server.close()
 }
 
 export const specs = [
