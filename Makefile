@@ -92,9 +92,12 @@ postgres-rebuild: docker-down ## rebuilds and restarts postgres service, use it 
 	@rm -rf ./postgres-data
 	@$(MAKE) docker-up
 
-postgres-connect: docker-up ## connects to postgress container and runs bash, run `psql -U postgres` to connect to db
+postgres-connect: ## connects to postgress container and runs bash, run `psql -U postgres` to connect to db
 	@CID=$$(docker ps -aqf "name=postgres"); \
 	docker exec -it "$$CID" /bin/bash
+
+db-schema: ## builds db schema by running schema script on postgres server
+	@node --no-warnings --experimental-top-level-await --experimental-policy=./dist/js/policy.json ./scripts/dbSchema.js
 
 all: deps build docker-up dev-server ## restores dependecies, builds the app and runs dev server
 
