@@ -70,7 +70,8 @@ export async function withDatabase(
 
   // create it from scratch
   const db = connect()
-  const dropCmd = `DROP SCHEMA IF EXISTS ${schemaName} CASCADE`
+  // prevent 'cascading delete' notice in output 
+  const dropCmd = `SET client_min_messages TO WARNING; DROP SCHEMA IF EXISTS ${schemaName} CASCADE;`
   await db.unsafe(dropCmd)
   await db.unsafe(`CREATE SCHEMA IF NOT EXISTS ${schemaName}`)
 

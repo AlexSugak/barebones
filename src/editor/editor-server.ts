@@ -4,13 +4,16 @@ import path from 'path'
 import { WebSocketServer } from 'ws'
 import { Dependencies, EndpointInit, WSInit } from '../server'
 import { consoleLogger, logPrefix } from '../logger'
+import { ChangeRecord } from './editor-types'
 
 const tmpDir: string = process.env.TMP_DIR || './tmp'
 
 export const editorWSPath = '/editor/ws'
 export const videoWSPath = '/editor/video/ws'
 
-export const initWS: WSInit = (dependencies: Dependencies, server: http.Server) => {
+const msgPayload = (prefix: string) => (message: string) => message.substring(`${prefix} `.length, message.length)
+
+export const initWS: WSInit = ({sql}: Dependencies, server: http.Server) => {
   const logger = logPrefix(`[editor ${(server.address() as any).port}]:`)(consoleLogger)
 
   const editorWSS = new WebSocketServer({
@@ -41,11 +44,29 @@ export const initWS: WSInit = (dependencies: Dependencies, server: http.Server) 
   })
 
   editorWSS.on('connection', (ws) => {
-    ws.on('message', (message) => {
+    let sessionId = -1
+    ws.on('message', async (message) => {
       logger.info('received: %s', message)
+      const msgStr = message.toString()
 
-      if (message.toString() === 'ping') {
+      if (msgStr === 'ping') {
         ws.send('pong')
+        return
+      }
+
+      if (msgStr === 'start') {
+        const id = await sql<{id: number}[]>`insert into sessions (changes) values ('[]') returning id`
+        sessionId = id[0].id
+        ws.send(`start ${sessionId}`)
+        return
+      }
+
+      if (msgStr.startsWith('edit')) {
+        const edit = '[' + msgPayload('edit')(msgStr) + ']'
+        await sql<any>`update sessions set changes = changes || ${edit}::jsonb where id = ${sessionId}`
+
+        // send ack
+        ws.send(`edit`)
         return
       }
   
