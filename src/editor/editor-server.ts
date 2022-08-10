@@ -5,13 +5,13 @@ import { WebSocketServer } from 'ws'
 import { Dependencies, EndpointInit, WSInit } from '../server'
 import { consoleLogger, logPrefix } from '../logger'
 import { ChangeRecord } from './editor-types'
+import { msgPayload } from '../websocket'
+import { invariant } from '../errors'
 
 const tmpDir: string = process.env.TMP_DIR || './tmp'
 
 export const editorWSPath = '/editor/ws'
 export const videoWSPath = '/editor/video/ws'
-
-const msgPayload = (prefix: string) => (message: string) => message.substring(`${prefix} `.length, message.length)
 
 export const initWS: WSInit = ({sql}: Dependencies, server: http.Server) => {
   const logger = logPrefix(`[editor ${(server.address() as any).port}]:`)(consoleLogger)
@@ -44,10 +44,10 @@ export const initWS: WSInit = ({sql}: Dependencies, server: http.Server) => {
   })
 
   editorWSS.on('connection', (ws) => {
-    let sessionId = -1
+    let sessionId = null
     ws.on('message', async (message) => {
-      logger.info('received: %s', message)
       const msgStr = message.toString()
+      logger.info('received: %s', msgStr)
 
       if (msgStr === 'ping') {
         ws.send('pong')
@@ -55,25 +55,29 @@ export const initWS: WSInit = ({sql}: Dependencies, server: http.Server) => {
       }
 
       if (msgStr === 'start') {
+        logger.info('starting session')
         const id = await sql<{id: number}[]>`insert into sessions (changes) values ('[]') returning id`
         sessionId = id[0].id
+        logger.info('sending session', sessionId)
         ws.send(`start ${sessionId}`)
         return
       }
 
-      if (msgStr.startsWith('edit')) {
-        const edit = '[' + msgPayload('edit')(msgStr) + ']'
-        await sql<any>`update sessions set changes = changes || ${edit}::jsonb where id = ${sessionId}`
+      if (msgStr.startsWith('change')) {
+        invariant(sessionId !== null, 'cannot receive changes before session is started')
+
+        const change = '[' + msgPayload('change')(msgStr) + ']'
+        await sql<any>`update sessions set changes = changes || ${change}::jsonb where id = ${sessionId}`
 
         // send ack
-        ws.send(`edit`)
+        ws.send(`change`)
         return
       }
   
       logger.warn('unknown message', message)
     })
-  
-    ws.send('start')
+
+    ws.send('ready')
   })
 
   videoWSS.on('connection', (ws) => {

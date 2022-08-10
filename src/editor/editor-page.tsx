@@ -4,42 +4,130 @@ import { Disposable } from '../disposable'
 import * as Rx from "../rx"
 import { useDisposable, useSubscription } from '../hooks'
 import { invariant } from '../errors'
-import { Player } from './player'
+import { Player, RecordBtn } from './player'
+import { consoleLogger, logPrefix } from '../logger'
+import { getWS, msgPayload, WS, WSOptions } from '../websocket'
+import { View } from '../hoc'
 
 // TODO: do not hardcode localhost
 // TODO: should be wss
-const editorWs = 'ws://localhost:3000/editor/ws'
+const editorWsUrl = 'ws://localhost:3000/editor/ws'
 
-interface EditorWS extends Disposable{
-  messages: Rx.Observable<string>
-  send(msg: string): void
+export interface EditorState {
+  recording: boolean
+  cameraOn: boolean
+  errors: string[]
 }
 
-const getEditorWS = (): EditorWS => {
-  const serverMessages = new Rx.Subject<string>()
+export const initialState: EditorState = {
+  recording: false,
+  cameraOn: false,
+  errors: []
+}  
 
-  const ws = new WebSocket(editorWs)
+class EditorModel implements Disposable {
+  private _state: Rx.BehaviorSubject<EditorState> =
+    new Rx.BehaviorSubject(initialState)
 
-  ws.onopen = (() => {
-    console.info('opening editor ws')
-    ws.send('hello from client editor')
-  })
+  private _editorWS: WS | null
+  private _videoWS: WS | null
+  private _cameraStream: MediaStream | null
+  private _recorder: MediaRecorder | null
+  private _sessionId: string | null
+  private _changesListener: Rx.Subscription | null
 
-  ws.onclose = (() => {
-    console.info('closing editor ws')
-  })
+  private _logger = logPrefix(`[editor model]:`)(consoleLogger)
 
-  ws.onmessage = (e => {
-    console.info('from editor server: ', e.data)
-    serverMessages.next(e.data)
-  })
+  constructor(
+    private _playerVideo: React.MutableRefObject<HTMLVideoElement>,
+    private _changes: Rx.Observable<ChangesWithUndo>,
+    private _getContent: () => string
+  ) {
+  }
 
-  ws.onerror = (e => console.error('editor ws error', e))
+  get state(): Rx.Observable<EditorState> {
+    return this._state
+  }
 
-  return {
-    messages: serverMessages,
-    send: msg => ws.send(msg),
-    dispose: () => ws.close()
+  async toggleCameraOn() {
+    const state = this._state.getValue()
+    this._logger.trace('toggleCameraOn', state)
+
+    if (!state.cameraOn) {
+      this._cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      this._playerVideo.current.srcObject = this._cameraStream
+    } else {
+      this._cameraStream = null
+      this._playerVideo.current.srcObject = null
+
+      if (state.recording && this._recorder) {
+        // TODO: pause instead?
+        this._recorder.onstop = () => {
+          // ws.current.close()
+          // ws.current = null  
+        }
+        this._recorder.stop()
+        this._recorder = null
+      }
+    }
+
+    this._state.next({...state, cameraOn: !state.cameraOn})
+  }
+
+  async toggleRecording() {
+    const state = this._state.getValue()
+    this._logger.trace('toggleRecording', state)
+
+    if (state.recording) { // stop
+      this.stopEditor()
+      this._state.next({...state, recording: !state.recording})
+      return
+    }
+
+    this._editorWS = getWS({
+      url: editorWsUrl,
+      name: 'changes',
+      onOpen: async () => {
+        this._logger.trace('start changes session')
+        this._editorWS!.send('start')
+
+        this._sessionId = await Rx.firstValueFrom(
+          this._editorWS!.messages.pipe(
+            Rx.first(m => m.startsWith('start')),
+            Rx.map(msgPayload('start'))
+          )
+        )
+
+        const firstChange = initialChange(this._getContent())
+        const firstChangeWithUndo: ChangesWithUndo = {
+          changes: [firstChange], 
+          invertedChanges: invertChanges([firstChange], '')
+        }
+
+        this._changesListener = this._changes.pipe(
+          Rx.startWith(firstChangeWithUndo),
+          Rx.tap(c => this._logger.trace('change', c)),
+          Rx.tap(c => this._editorWS!.send(`change ${JSON.stringify(c)}`))
+        ).subscribe()
+
+        this._logger.trace('changes session started', this._sessionId)
+      }
+    })
+
+    this._state.next({...state, recording: !state.recording})
+  }
+
+  private stopEditor() {
+    this._changesListener?.unsubscribe()
+    this._changesListener = null
+
+    this._editorWS?.dispose()
+    this._editorWS = null
+  }
+
+  dispose(): void {
+    this.stopEditor()
+    this._videoWS?.dispose()
   }
 }
 
@@ -127,8 +215,11 @@ export const Editor = ({}) => {
   //start with an empty change to be able to rewind all the way to the empty state
   const changesWithUndo = React.useRef<ChangesWithUndo[]>([{changes: [], invertedChanges: []}])
 
-  useSubscription(changesObs.pipe(
+  const changesWithUndoObs = changesObs.pipe(
     Rx.map(c => ({changes: c.changes, invertedChanges: invertChanges(c.changes, c.prevContent)})),
+  )
+
+  useSubscription(changesWithUndoObs.pipe(
     Rx.tap(c => console.log("change", c)),
     Rx.tap(c => {
       changesWithUndo.current.push(c)
@@ -224,11 +315,13 @@ export const Editor = ({}) => {
     undo(changesWithUndo.current, () => {isTimeTraveling.current = false}, 500)
   }
 
-  
-
-  const editorWS = useDisposable(getEditorWS())
-  // TODO: handle messages from server
-  // useSubscription(editorWS.messages)
+  const videoRef = React.useRef<HTMLVideoElement | null>(null)
+  const editorModel = new EditorModel(
+    videoRef,
+    changesWithUndoObs,
+    () => editorRef.current.getModel().getValue()
+  )
+  useDisposable(editorModel)
 
   return (
     <div className='inline-flex flex-column m-1'>
@@ -247,6 +340,13 @@ export const Editor = ({}) => {
       </div> */}
       <div style={{width: '100%'}}>
         <TimeRange positionListener={timePosition} />
+      </div>
+      <div>
+        <View stream={editorModel.state}>
+          {s => <>
+            <RecordBtn onClick={() => editorModel.toggleRecording()} isRecording={s.recording} />
+          </>}
+        </View>
       </div>
     </div>
   )
@@ -269,6 +369,16 @@ const TimeRange = ({positionListener}: {positionListener: Rx.Observer<number>}) 
     style={{width: '100%', cursor: 'pointer'}} 
   />)
 }
+
+
+function initialChange(text: string): Change {
+  return {
+    range: {startColumn: 1, endColumn: 1, startLineNumber: 1, endLineNumber: 1},
+    rangeOffset: 0,
+    rangeLength: 0,
+    text
+  }
+} 
 
 // TODO: move this to the server to not add load to the client ?
 

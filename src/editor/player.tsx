@@ -7,13 +7,13 @@ import { useDisposable } from '../hooks'
 // TODO: do not hardcode localhost
 const videoWs = 'ws://localhost:3000/editor/video/ws'
 
-interface PlayerState {
+export interface PlayerState {
   isRecording: boolean
   isLive: boolean
   errors: string[]
 }
 
-const initialState: PlayerState = {
+export const initialState: PlayerState = {
   isRecording: false,
   isLive: false,
   errors: []

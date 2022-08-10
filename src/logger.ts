@@ -1,11 +1,12 @@
 
-export type LogLevel = 'info' | 'warn' | 'error'
+export type LogLevel = 'trace'| 'info' | 'warn' | 'error'
 export type Logger = { 
   [key in LogLevel]: (msg: string, ...data: any[]) => void 
 }
 
 export const consoleLogger: Logger = {
-  'info': console.log,
+  'trace': console.log,
+  'info': console.info,
   'warn': console.warn,
   'error': console.error
 }
