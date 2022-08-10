@@ -6,9 +6,9 @@ import { doNothing } from './utils'
 export const msgPayload = (prefix: string) => (message: string) => 
   message.substring(`${prefix} `.length, message.length)
 
-export interface WS extends Disposable{
-  messages: Rx.Observable<string>
-  send(msg: string): void
+export interface WS<Req, Resp> extends Disposable{
+  messages: Rx.Observable<Resp>
+  send(msg: Req): void
 }
 
 export interface WSOptions {
@@ -18,9 +18,9 @@ export interface WSOptions {
   onClose?: () => Promise<void>
 }
 
-export const getWS = ({url, name, onClose = doNothing, onOpen = doNothing}: WSOptions): WS => {
+export const getWS = <Req, Resp>({url, name, onClose = doNothing, onOpen = doNothing}: WSOptions): WS<Req, Resp> => {
   const logger = logPrefix(`[${name} ws]:`)(consoleLogger)
-  const serverMessages = new Rx.Subject<string>()
+  const serverMessages = new Rx.Subject<Resp>()
 
   const ws = new WebSocket(url)
 
@@ -36,14 +36,14 @@ export const getWS = ({url, name, onClose = doNothing, onOpen = doNothing}: WSOp
 
   ws.onmessage = (e => {
     logger.info('received: ', e.data)
-    serverMessages.next(e.data)
+    serverMessages.next(e.data as Resp)
   })
 
   ws.onerror = (e => logger.error('error', e))
 
   return {
     messages: serverMessages,
-    send: msg => ws.send(msg),
+    send: msg => ws.send(msg as any),
     dispose: () => ws.close()
   }
 }

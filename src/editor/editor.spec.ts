@@ -3,7 +3,7 @@ import { WebSocket, MessageEvent } from 'ws'
 import { Expect, test, spec, Specification } from '../spec'
 import { request, withDatabase, withWebServer, withWSServer } from '../tests/server.spec'
 import { editorWSPath } from './editor-server'
-import { ChangeRecord } from './editor-types'
+import { ChangeMessage } from './editor-types'
 
 const receivedMsg = (ws: WebSocket, message: string, timeout: number = 1000): Promise<string> => {
   return new Promise<string>((resolve, reject) => {
@@ -80,17 +80,17 @@ export const specs: Specification[] = [
             ws.send(`start`)
             const id = await startAck
 
-            const change: ChangeRecord = {timestamp: 123, changes: [], invertedChanges: []}
+            const change: ChangeMessage = {timestamp: 123, changes: [], invertedChanges: []}
             const changeAck = receivedMsg(ws, 'change')
             ws.send(`change ${JSON.stringify(change)}`)
             await changeAck
 
-            const change2: ChangeRecord = {timestamp: 124, changes: [], invertedChanges: []}
+            const change2: ChangeMessage = {timestamp: 124, changes: [], invertedChanges: []}
             const change2Ack = receivedMsg(ws, 'change')
             ws.send(`change ${JSON.stringify(change2)}`)
             await change2Ack
 
-            const inDb = await sql<{changes: ChangeRecord[]}[]>`select changes from sessions where id = ${id}`
+            const inDb = await sql<{changes: ChangeMessage[]}[]>`select changes from sessions where id = ${id}`
             Expect.equals(1, inDb.length)
             Expect.equals(2, inDb[0].changes.length)
             Expect.equals(change.timestamp, inDb[0].changes[0].timestamp)

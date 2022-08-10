@@ -1,9 +1,17 @@
 import * as monaco from '../monaco'
 
-type MonacoChange = monaco.editor.IModelContentChange
+export type Change = monaco.editor.IModelContentChange
 
-export interface ChangeRecord {
+export interface ChangesWithUndo { 
+  changes: Change[], 
+  invertedChanges: Change[] 
+}
+
+export interface EditorChange { 
+  changes: Change[], 
+  prevContent: string 
+}
+
+export interface ChangeMessage extends ChangesWithUndo {
   readonly timestamp: number
-  readonly changes: MonacoChange[]
-  readonly invertedChanges: MonacoChange[]
 }

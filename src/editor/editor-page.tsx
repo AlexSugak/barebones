@@ -6,12 +6,14 @@ import { useDisposable, useSubscription } from '../hooks'
 import { invariant } from '../errors'
 import { Player, RecordBtn } from './player'
 import { consoleLogger, logPrefix } from '../logger'
-import { getWS, msgPayload, WS, WSOptions } from '../websocket'
+import { getWS, msgPayload, WS } from '../websocket'
 import { View } from '../hoc'
+import { Change, ChangeMessage, ChangesWithUndo, EditorChange } from './editor-types'
 
 // TODO: do not hardcode localhost
 // TODO: should be wss
 const editorWsUrl = 'ws://localhost:3000/editor/ws'
+const videoWsUrl = 'ws://localhost:3000/editor/video/ws'
 
 export interface EditorState {
   recording: boolean
@@ -29,11 +31,11 @@ class EditorModel implements Disposable {
   private _state: Rx.BehaviorSubject<EditorState> =
     new Rx.BehaviorSubject(initialState)
 
-  private _editorWS: WS | null
-  private _videoWS: WS | null
+  // TODO: use more narrow types of messages
+  private _editorWS: WS<string, string> | null
+  private _videoWS: WS<string | Blob, string> | null
   private _cameraStream: MediaStream | null
   private _recorder: MediaRecorder | null
-  private _sessionId: string | null
   private _changesListener: Rx.Subscription | null
 
   private _logger = logPrefix(`[editor model]:`)(consoleLogger)
@@ -79,7 +81,7 @@ class EditorModel implements Disposable {
     this._logger.trace('toggleRecording', state)
 
     if (state.recording) { // stop
-      this.stopEditor()
+      this.stopRecording()
       this._state.next({...state, recording: !state.recording})
       return
     }
@@ -91,12 +93,14 @@ class EditorModel implements Disposable {
         this._logger.trace('start changes session')
         this._editorWS!.send('start')
 
-        this._sessionId = await Rx.firstValueFrom(
+        const sessionId = await Rx.firstValueFrom(
           this._editorWS!.messages.pipe(
             Rx.first(m => m.startsWith('start')),
             Rx.map(msgPayload('start'))
           )
         )
+
+        this.startVideoRecording(sessionId)
 
         const firstChange = initialChange(this._getContent())
         const firstChangeWithUndo: ChangesWithUndo = {
@@ -106,18 +110,32 @@ class EditorModel implements Disposable {
 
         this._changesListener = this._changes.pipe(
           Rx.startWith(firstChangeWithUndo),
+          Rx.map(c => {
+            const msg: ChangeMessage = {
+              ...c,
+              timestamp: Date.now()
+            }
+            return msg
+          }),
           Rx.tap(c => this._logger.trace('change', c)),
           Rx.tap(c => this._editorWS!.send(`change ${JSON.stringify(c)}`))
         ).subscribe()
 
-        this._logger.trace('changes session started', this._sessionId)
+        this._logger.trace('changes session started', sessionId)
       }
     })
 
     this._state.next({...state, recording: !state.recording})
   }
 
-  private stopEditor() {
+  private stopRecording() {
+    this._recorder.onstop = () => {
+      this._videoWS?.dispose()
+      this._videoWS = null
+    }
+    this._recorder.stop()
+    this._recorder = null
+
     this._changesListener?.unsubscribe()
     this._changesListener = null
 
@@ -125,16 +143,40 @@ class EditorModel implements Disposable {
     this._editorWS = null
   }
 
+  private startVideoRecording(sessionId: string) {
+    invariant(
+      this._cameraStream !== null,
+      'camera must be on before starting recording')
+
+    const recorderOptions = {
+      mimeType: 'video/webm',
+      videoBitsPerSecond: 200000 // 0.2 Mbit/sec.
+    }
+    this._recorder = new MediaRecorder(this._cameraStream, recorderOptions)
+
+    this._videoWS = getWS({
+      url: videoWsUrl,
+      name: 'video',
+      onOpen: async () => {
+        this._logger.trace('start video recording')
+        this._videoWS.send(`start ${sessionId}`)
+
+        this._recorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            this._videoWS.send(event.data);
+          }
+        }
+    
+        this._recorder.start(1000) // 1000 - the number of milliseconds to record into each Blob
+      }
+    }) 
+  }
+
   dispose(): void {
-    this.stopEditor()
+    this.stopRecording()
     this._videoWS?.dispose()
   }
 }
-
-
-type Change = monaco.editor.IModelContentChange
-type ChangesWithUndo = { changes: Change[], invertedChanges: Change[] } 
-type EditorChange = { changes: Change[], prevContent: string }
 
 const defaultCode = 'function hello() {}'
 
@@ -310,11 +352,6 @@ export const Editor = ({}) => {
     }
   }
 
-  const undoAll = () => {
-    isTimeTraveling.current = true
-    undo(changesWithUndo.current, () => {isTimeTraveling.current = false}, 500)
-  }
-
   const videoRef = React.useRef<HTMLVideoElement | null>(null)
   const editorModel = new EditorModel(
     videoRef,
@@ -322,6 +359,10 @@ export const Editor = ({}) => {
     () => editorRef.current.getModel().getValue()
   )
   useDisposable(editorModel)
+
+  React.useEffect(() => {
+    editorModel.toggleCameraOn()
+  }, [])
 
   return (
     <div className='inline-flex flex-column m-1'>
@@ -332,7 +373,7 @@ export const Editor = ({}) => {
           style={{width: '300px', height: '200px', border: '1px solid grey'}}>
         </div>
         <div className='pl-1'>
-          <Player />
+          <Player ref={videoRef} />
         </div>
       </div>
       {/* <div style={{margin: '10px'}}>
@@ -369,7 +410,6 @@ const TimeRange = ({positionListener}: {positionListener: Rx.Observer<number>}) 
     style={{width: '100%', cursor: 'pointer'}} 
   />)
 }
-
 
 function initialChange(text: string): Change {
   return {
