@@ -99,5 +99,45 @@ export const specs: Specification[] = [
         })
       })
     ]
+  ),
+  spec(
+    'editor sessions api', [
+      test('returns session details', async () => {
+        await withDatabase(async sql => 
+          await withWebServer(
+            { sql },
+            async port => {
+              await sql<{}[]>`insert into sessions (changes) values ('[{"a": "123"}]')`
+
+              return request({
+                hostname: 'localhost',
+                path: '/api/editor/sessions/1',
+                port,
+                method: 'GET'
+              })
+            },
+            resp => {
+              Expect.equals(200, resp.status)
+              const expectedResponse = JSON.stringify([{a: '123'}])
+              Expect.equals(expectedResponse, resp.data.toString())
+            }
+          ))
+      }),
+      test('returns 404 if session not found', async () => {
+        await withDatabase(async sql => 
+          await withWebServer(
+            { sql },
+            port => request({
+              hostname: 'localhost',
+              path: '/api/editor/sessions/2',
+              port,
+              method: 'GET'
+            }),
+            resp => {
+              Expect.equals(404, resp.status)
+            }
+          ))
+      })
+    ]
   )
 ]

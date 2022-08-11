@@ -5,6 +5,7 @@ import postgres from 'postgres'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { init as authInit } from './auth/auth-server'
+import { init as editorInit } from './editor/editor-server'
 import { initWS as editorWS } from './editor/editor-server'
 import { connect } from './db/connection'
 
@@ -51,7 +52,8 @@ export function buildDependencies(): Dependencies {
 
 export function defaultEndpoints(): EndpointInit[] {
   return [
-    authInit
+    authInit,
+    editorInit
   ]
 }
 
@@ -102,8 +104,6 @@ export function initEndpoints(
   endpoints: EndpointInit[] = defaultEndpoints(),
   dependencies: Dependencies = buildDependencies()) {
 
-  console.log('configuring barebones back-end', { distDir })
-
   configure(app)
 
   app.get('/api', (_req, res) => {
@@ -115,7 +115,11 @@ export function initEndpoints(
   app.use(express.static(distDir))
 
   // index.html
-  app.get('*', function(reg, res) {
+  app.get('*', function(reg, res, next) {
+    if (reg.url.startsWith('/api') || reg.url.endsWith('.js')) {
+      return next()
+    }
+
     console.log('index.html <- ', reg.url)
     res.send(renderMarkup(renderLoader()))
     return res.status(200)
@@ -126,7 +130,6 @@ export function initEndpoints(
     res.status(500).send('Error processing request!')
     next(err)
   })
-  console.log('done')
 }
 
 export function initWS(
@@ -134,10 +137,7 @@ export function initWS(
   wsis: WSInit[] = defaultWS(),
   dependencies: Dependencies = buildDependencies()) {
 
-  console.log('configuring bare bones web sockets', { distDir })
   wsis.forEach(e => e(dependencies, server))
-
-  console.log('done')
 }
 
 // TODO: add main function to run app server on itself, not through dev-server.js

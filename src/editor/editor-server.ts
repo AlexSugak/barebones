@@ -1,4 +1,5 @@
 import * as http from 'http'
+import express from 'express'
 import fs, { WriteStream } from 'fs'
 import path from 'path'
 import { WebSocketServer } from 'ws'
@@ -9,6 +10,20 @@ import { msgPayload } from '../websocket'
 import { invariant } from '../errors'
 
 const tmpDir: string = process.env.TMP_DIR || './tmp'
+const videoDir = tmpDir
+
+export const init: EndpointInit = ({sql}: Dependencies, app: express.Express) => {
+  app.get('/api/editor/sessions/:id', async (req, res) => {
+    const sessions = await sql<{changes: any[]}[]>`select * from sessions where id = ${req.params.id}`
+    
+    if (sessions.length === 0) {
+      res.status(404)
+      return res.json({error: 'not found'})
+    }
+
+    return res.json(sessions[0].changes)
+  })
+}
 
 export const editorWSPath = '/editor/ws'
 export const videoWSPath = '/editor/video/ws'
@@ -89,7 +104,7 @@ export const initWS: WSInit = ({sql}: Dependencies, server: http.Server) => {
         invariant(strMessage.startsWith('start'), 'first message in video stream must be start message')
         const sessionId = msgPayload('start')(strMessage)
 
-        const fileName = `${tmpDir}/${sessionId}.webm`
+        const fileName = `${videoDir}/${sessionId}.webm`
         fs.mkdirSync(path.dirname(fileName), { recursive: true });
         try {
           fs.rmSync(fileName)
