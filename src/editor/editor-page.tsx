@@ -4,11 +4,12 @@ import { Disposable } from '../disposable'
 import * as Rx from "../rx"
 import { useDisposable, useSubscription } from '../hooks'
 import { invariant } from '../errors'
-import { Player, RecordBtn } from './player'
 import { consoleLogger, logPrefix } from '../logger'
 import { getWS, msgPayload, WS } from '../websocket'
 import { View } from '../hoc'
 import { Change, ChangeMessage, ChangesWithUndo, EditorChange } from './editor-types'
+import { Player, RecordBtn } from './player'
+import { Editor as TextEditor } from './editor'
 
 // TODO: do not hardcode localhost
 // TODO: should be wss
@@ -37,6 +38,7 @@ class EditorModel implements Disposable {
   private _cameraStream: MediaStream | null
   private _recorder: MediaRecorder | null
   private _changesListener: Rx.Subscription | null
+  private _recordingStartedAt: number = 0
 
   private _logger = logPrefix(`[editor model]:`)(consoleLogger)
 
@@ -103,20 +105,21 @@ class EditorModel implements Disposable {
         this.startVideoRecording(sessionId)
 
         const firstChange = initialChange(this._getContent())
-        const firstChangeWithUndo: ChangesWithUndo = {
+        const firstChangeMessage: ChangeMessage = {
+          timestamp: 0,
           changes: [firstChange], 
           invertedChanges: invertChanges([firstChange], '')
         }
 
         this._changesListener = this._changes.pipe(
-          Rx.startWith(firstChangeWithUndo),
           Rx.map(c => {
             const msg: ChangeMessage = {
               ...c,
-              timestamp: Date.now()
+              timestamp: Date.now() - this._recordingStartedAt
             }
             return msg
           }),
+          Rx.startWith(firstChangeMessage),
           Rx.tap(c => this._logger.trace('change', c)),
           Rx.tap(c => this._editorWS!.send(`change ${JSON.stringify(c)}`))
         ).subscribe()
@@ -153,6 +156,9 @@ class EditorModel implements Disposable {
       videoBitsPerSecond: 200000 // 0.2 Mbit/sec.
     }
     this._recorder = new MediaRecorder(this._cameraStream, recorderOptions)
+    this._recorder.onstart = () => {
+      this._recordingStartedAt = Date.now()
+    }
 
     this._videoWS = getWS({
       url: videoWsUrl,
@@ -181,78 +187,9 @@ class EditorModel implements Disposable {
 const defaultCode = 'function hello() {}'
 
 export const Editor = ({}) => {
-  const editorElementRef = React.useRef<HTMLDivElement | undefined>(undefined)
-
-  React.useEffect(() => {
-    const loaderScript = document.createElement('script')
-    loaderScript.src = '/js/lib/monaco/min/vs/loader.js'
-    loaderScript.async = true;
-    document.body.appendChild(loaderScript)
-
-    const editorSettings: monaco.editor.IStandaloneEditorConstructionOptions = {
-      value: '',
-      language: 'javascript',
-      minimap: {
-        enabled: false
-      },
-      tabSize: 2,
-      insertSpaces: true
-    }
-    const initScript = document.createElement('script')
-    initScript.async = true;
-    initScript.innerHTML = `
-    require.config({ paths: { vs: '/js/lib/monaco/min/vs' } });
-    require(['vs/editor/editor.main'], function () {
-      window.monacoEditor = monaco.editor.create(document.getElementById('editorContainer'), ${JSON.stringify(editorSettings)});
-      window.initEditor(window.monacoEditor)
-    });
-    `
-
-    loaderScript.onload = () => {
-      document.body.appendChild(initScript)
-    }
-  
-    return () => {
-      document.body.removeChild(loaderScript)
-      document.body.removeChild(initScript)
-    }
-  }, [])
-
-  const changesObs = new Rx.Subject<EditorChange>()
   const editorRef = React.useRef<monaco.editor.IStandaloneCodeEditor>()
+  const changesObs = new Rx.Subject<EditorChange>()
   const isTimeTraveling = React.useRef(false)
-  const initEditor = (editor: monaco.editor.IStandaloneCodeEditor) => {
-    editorRef.current = editor
-    const model = editor.getModel()
-    let content = model.getValue()
-
-    model.onDidChangeContent(e => {
-      if(!isTimeTraveling.current){
-        changesObs.next({changes: e.changes, prevContent: content})
-      }
-      content = model.getValue()
-    })
-
-    requestAnimationFrame(() => 
-      model.pushEditOperations(
-        [], 
-        [{
-          forceMoveMarkers: true,
-          range: {
-              startLineNumber: 1,
-              startColumn: 1,
-              endLineNumber: 1,
-              endColumn: 1
-          },
-          text: defaultCode
-        }],
-        null
-      ))
-  }
-
-  React.useEffect(() => {
-    (window as any).initEditor = initEditor
-  }, [])
 
   //start with an empty change to be able to rewind all the way to the empty state
   const changesWithUndo = React.useRef<ChangesWithUndo[]>([{changes: [], invertedChanges: []}])
@@ -364,21 +301,20 @@ export const Editor = ({}) => {
     editorModel.toggleCameraOn()
   }, [])
 
+  const onTextChange = (e, prevContent) => {
+    if(!isTimeTraveling.current){
+      changesObs.next({changes: e.changes, prevContent})
+    }
+  }
+
   return (
     <div className='inline-flex flex-column m-1'>
       <div className='inline-flex'>
-        <div 
-          id="editorContainer" 
-          ref={editorElementRef} 
-          style={{width: '300px', height: '200px', border: '1px solid grey'}}>
-        </div>
+        <TextEditor ref={editorRef} onChange={onTextChange} defaultContent={defaultCode} />
         <div className='pl-1'>
           <Player ref={videoRef} />
         </div>
       </div>
-      {/* <div style={{margin: '10px'}}>
-        <button className="btnPrimary" onClick={undoAll}>Undo all</button>
-      </div> */}
       <div style={{width: '100%'}}>
         <TimeRange positionListener={timePosition} />
       </div>
