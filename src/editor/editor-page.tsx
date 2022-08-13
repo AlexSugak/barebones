@@ -2,7 +2,7 @@ import { React } from '../react'
 import * as monaco from '../monaco'
 import { Disposable } from '../disposable'
 import * as Rx from "../rx"
-import { useDisposable, useSubscription } from '../hooks'
+import { useDisposable } from '../hooks'
 import { invariant } from '../errors'
 import { consoleLogger, logPrefix } from '../logger'
 import { getWS, msgPayload, WS } from '../websocket'
@@ -189,105 +189,9 @@ const defaultCode = 'function hello() {}'
 export const Editor = ({}) => {
   const editorRef = React.useRef<monaco.editor.IStandaloneCodeEditor>()
   const changesObs = new Rx.Subject<EditorChange>()
-  const isTimeTraveling = React.useRef(false)
-
-  //start with an empty change to be able to rewind all the way to the empty state
-  const changesWithUndo = React.useRef<ChangesWithUndo[]>([{changes: [], invertedChanges: []}])
-
   const changesWithUndoObs = changesObs.pipe(
     Rx.map(c => ({changes: c.changes, invertedChanges: invertChanges(c.changes, c.prevContent)})),
   )
-
-  useSubscription(changesWithUndoObs.pipe(
-    Rx.tap(c => console.log("change", c)),
-    Rx.tap(c => {
-      changesWithUndo.current.push(c)
-      prevPosition.current = changesWithUndo.current.length - 1
-    })
-  ))
-
-  const prevPosition = React.useRef(0)
-  const timePosition = new Rx.Subject<number>()
-  useSubscription(timePosition.pipe(
-    // Rx.tap(p => console.log(p))
-    Rx.tap(p => {
-      timeTravel(p)
-    })
-  ))
-
-  const timeTravel = (timePosition: number) => {
-    // timePosition is from 0 to 100
-    // prevPosition is index in changesArray
-
-    isTimeTraveling.current = true
-
-    const changesTotal = changesWithUndo.current.length
-    const prev = prevPosition.current
-    const scale = 100 / changesTotal
-    const timeScaled = Math.floor(timePosition / scale)
-    
-    console.log({changesTotal, prev, timePosition, timeScaled, scale})
-
-    if (timeScaled === prev) {
-      return
-    }
-
-    if (timeScaled > prev) { // redo
-      const delta = [...changesWithUndo.current].splice(prev + 1, timeScaled - prev)
-      console.log(delta)
-      redo(delta, () => {
-        isTimeTraveling.current = false
-        prevPosition.current = timeScaled
-      })
-    } else { // undo
-      const delta = [...changesWithUndo.current].splice(timeScaled + 1, prev - timeScaled)
-      console.log(delta)
-      undo(delta, () => {
-        isTimeTraveling.current = false
-        prevPosition.current = timeScaled
-      })
-    }
-  }
-
-  const redo = (c: ChangesWithUndo[], onFinished: () => void, delay = 0) => {
-    if (c.length === 0) {
-      onFinished()
-      return
-    }
-
-    const first = c.splice(0, 1)[0]
-
-    editorRef.current.getModel().pushEditOperations(
-      [], 
-      first.changes.map(c => ({...c, forceMoveMarkers: true})), 
-      null
-    )
-    if (delay > 0) {
-      setTimeout(() => redo(c, onFinished, delay), delay)
-    } else {
-      redo(c, onFinished)
-    }
-  }
-
-  const undo = (c: ChangesWithUndo[], onFinished: () => void, delay = 0) => {
-    if (c.length === 0) {
-      onFinished()
-      return
-    }
-
-    const last = c.pop()
-
-    editorRef.current.getModel().pushEditOperations(
-      [], 
-      last.invertedChanges.map(c => ({...c, forceMoveMarkers: true})), 
-      null
-    )
-    if (delay > 0) {
-      setTimeout(() => undo(c, onFinished, delay), delay)
-    } else {
-      undo(c, onFinished)
-    }
-  }
 
   const videoRef = React.useRef<HTMLVideoElement | null>(null)
   const editorModel = new EditorModel(
@@ -302,9 +206,7 @@ export const Editor = ({}) => {
   }, [])
 
   const onTextChange = (e, prevContent) => {
-    if(!isTimeTraveling.current){
-      changesObs.next({changes: e.changes, prevContent})
-    }
+    changesObs.next({changes: e.changes, prevContent})
   }
 
   return (
@@ -312,11 +214,8 @@ export const Editor = ({}) => {
       <div className='inline-flex'>
         <TextEditor ref={editorRef} onChange={onTextChange} defaultContent={defaultCode} />
         <div className='pl-1'>
-          <Player ref={videoRef} />
+          <Player ref={videoRef} autoPlay muted />
         </div>
-      </div>
-      <div style={{width: '100%'}}>
-        <TimeRange positionListener={timePosition} />
       </div>
       <div>
         <View stream={editorModel.state}>
@@ -327,24 +226,6 @@ export const Editor = ({}) => {
       </div>
     </div>
   )
-}
-
-const TimeRange = ({positionListener}: {positionListener: Rx.Observer<number>}) => {
-  const [timeSliderValue, setTimeSliderValue] = React.useState(100)
-
-  const updatePosition = (newPosition: number) => {
-    setTimeSliderValue(newPosition)
-    positionListener.next(newPosition)
-  }
-
-  return (<input 
-    type="range"
-    min="0" 
-    max="100" 
-    value={timeSliderValue}
-    onChange={e => updatePosition(Number(e.target.value))}
-    style={{width: '100%', cursor: 'pointer'}} 
-  />)
 }
 
 function initialChange(text: string): Change {

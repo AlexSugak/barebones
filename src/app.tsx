@@ -9,6 +9,7 @@ import { CssReloader, getDevServerMessages, getSourceFilesUpdates, isDevEnv } fr
 import { useDisposable } from './hooks'
 import { Disposable } from './disposable'
 import { Editor } from './editor/editor-page'
+import { Reel } from './editor/reel-page'
 
 const router = new RouterState()
 const user = new User.UserManager()
@@ -27,6 +28,7 @@ const views: Views = {
   login: () => <Login onLogin={login} />,
   stories: () => <Stories />,
   editor: () => <Editor />,
+  reel: (id) => <Reel id={id} />,
 }
 
 export const App = ({ }) => {

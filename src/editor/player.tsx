@@ -1,14 +1,32 @@
 import { React } from '../react'
+import * as Rx from "../rx"
 
-export const Player = React.forwardRef<HTMLVideoElement, {}>(({}, ref) => {
+export type PlayerProps = {} & React.VideoHTMLAttributes<HTMLVideoElement>
+export const Player = React.forwardRef<HTMLVideoElement, PlayerProps>((props, ref) => {
   return (
     <div>
       <div>
-        <video style={{backgroundColor: 'gray'}} ref={ref} height={"200"} width={"300"} autoPlay muted />
+        <video style={{backgroundColor: 'gray'}} ref={ref} height={"200"} width={"300"} {...props} />
       </div>
     </div>
   )
 })
+
+export type TimeRangeProps = {
+  onPositionUpdate: (position: number) => void, 
+  position: number,
+  totalDuration: number
+}
+export const TimeRange = ({onPositionUpdate, position, totalDuration}: TimeRangeProps) => {
+  return (<input 
+    type="range"
+    min="0" 
+    max={totalDuration}
+    value={position}
+    onChange={e => onPositionUpdate(Number(e.target.value))}
+    style={{width: '100%', cursor: 'pointer'}} 
+  />)
+}
 
 export const PlayBtn = ({onClick, isPlaying}: {onClick: () => void, isPlaying: boolean}) => {
   return (

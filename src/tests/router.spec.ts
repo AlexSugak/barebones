@@ -13,8 +13,8 @@ export const specs = [
         Expect.equals<Path>('/', p2.path)
       }),
       test('should match string with params', () => {
-        const p = matchLocationToPath('/posts/1')
-        Expect.equals<Path>('/posts/(?<id>.*)', p.path)
+        const p = matchLocationToPath('/reels/1')
+        Expect.equals<Path>('/reels/(?<id>.*)', p.path)
       })
     ]
   ),
@@ -26,13 +26,8 @@ export const specs = [
         Expect.equals('/about', url)
       }),
       test('should generate url for path with params', () => {
-        const postUrl = generatePathUrl('/posts/(?<id>.*)', { id: '123' })
-        Expect.equals('/posts/123', postUrl)
-
-        const calendarUrl = generatePathUrl(
-          '/calendar/(?<year>.*)/(?<month>.*)', 
-          { year: '2021', month: '11' })
-        Expect.equals('/calendar/2021/11', calendarUrl)
+        const url = generatePathUrl('/reels/(?<id>.*)', { id: '123' })
+        Expect.equals('/reels/123', url)
       })
     ]
   )

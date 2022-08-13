@@ -116,7 +116,7 @@ export function initEndpoints(
 
   // index.html
   app.get('*', function(reg, res, next) {
-    if (reg.url.startsWith('/api') || reg.url.endsWith('.js')) {
+    if (reg.url.startsWith('/api') || reg.url.endsWith('.js') || reg.url.endsWith('.js.map')) {
       return next()
     }
 

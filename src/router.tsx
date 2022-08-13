@@ -16,10 +16,9 @@ import { assertNever } from './errors'
  export const PATHS = [
   '/',
   '/about',
-  '/posts/(?<id>.*)',
-  '/calendar/(?<year>.*)/(?<month>.*)',
   '/not-found',
   '/editor',
+  '/reels/(?<id>.*)',
   '/admin',
   '/stories',
   '/login'
@@ -132,6 +131,7 @@ export interface Views {
   login: () => React.ReactElement,
   stories: () => React.ReactElement,
   editor: () => React.ReactElement,
+  reel: (id: string) => React.ReactElement
 }
 
 export function matchLocationToView(views: Views): MathLocation {
@@ -144,10 +144,6 @@ export function matchLocationToView(views: Views): MathLocation {
         return <div>About</div>
       case '/not-found':
         return <div>Not Found!</div>
-      case '/calendar/(?<year>.*)/(?<month>.*)':
-        return <div>Calendar: {p.params.year} {p.params.month}</div>
-      case '/posts/(?<id>.*)':
-        return <div>Post: {p.params.id}</div>
       case '/login':
         return views.login()
       case '/admin':
@@ -156,6 +152,8 @@ export function matchLocationToView(views: Views): MathLocation {
         return views.stories()
       case '/editor':
         return views.editor()
+      case '/reels/(?<id>.*)':
+        return views.reel(p.params.id)
       default:
         assertNever(p)
     }
