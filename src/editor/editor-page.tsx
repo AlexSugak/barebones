@@ -10,6 +10,7 @@ import { View } from '../hoc'
 import { Change, ChangeMessage, ChangesWithUndo, EditorChange } from './editor-types'
 import { Player, RecordBtn } from './player'
 import { Editor as TextEditor } from './editor'
+import { Link } from '../router'
 
 // TODO: do not hardcode localhost
 // TODO: should be wss
@@ -17,12 +18,14 @@ const editorWsUrl = 'ws://localhost:3000/editor/ws'
 const videoWsUrl = 'ws://localhost:3000/editor/video/ws'
 
 export interface EditorState {
+  sessionId: string | null
   recording: boolean
   cameraOn: boolean
   errors: string[]
 }
 
 export const initialState: EditorState = {
+  sessionId: null,
   recording: false,
   cameraOn: false,
   errors: []
@@ -102,6 +105,8 @@ class EditorModel implements Disposable {
           )
         )
 
+        this.updateState(s => ({...s, sessionId}))
+
         this.startVideoRecording(sessionId)
 
         const firstChange = initialChange(this._getContent())
@@ -132,18 +137,31 @@ class EditorModel implements Disposable {
   }
 
   private stopRecording() {
-    this._recorder.onstop = () => {
-      this._videoWS?.dispose()
-      this._videoWS = null
+    if (this._recorder) {
+      this._recorder.onstop = async () => {
+        const duration = Date.now() - this._recordingStartedAt
+        this._logger.info('duration', duration)
+        this._editorWS.send(`duration ${duration}`)
+
+        // wait for ack
+        await Rx.firstValueFrom(
+          this._editorWS!.messages.pipe(
+            Rx.first(m => m.startsWith('duration'))
+          )
+        )
+
+        this._editorWS?.dispose()
+        this._editorWS = null
+        this._videoWS?.dispose()
+        this._videoWS = null
+      }
     }
-    this._recorder.stop()
+
+    this._recorder?.stop()
     this._recorder = null
 
     this._changesListener?.unsubscribe()
     this._changesListener = null
-
-    this._editorWS?.dispose()
-    this._editorWS = null
   }
 
   private startVideoRecording(sessionId: string) {
@@ -178,6 +196,11 @@ class EditorModel implements Disposable {
     }) 
   }
 
+  private updateState(update: (state: EditorState) => EditorState) {
+    const prevState = this._state.getValue()
+    this._state.next(update(prevState))
+  }
+
   dispose(): void {
     this.stopRecording()
     this._videoWS?.dispose()
@@ -186,7 +209,7 @@ class EditorModel implements Disposable {
 
 const defaultCode = 'function hello() {}'
 
-export const Editor = ({}) => {
+export const Editor = ({navigate}: {navigate: (url: string) => void}) => {
   const editorRef = React.useRef<monaco.editor.IStandaloneCodeEditor>()
   const changesObs = new Rx.Subject<EditorChange>()
   const changesWithUndoObs = changesObs.pipe(
@@ -222,6 +245,15 @@ export const Editor = ({}) => {
           {s => <>
             <RecordBtn onClick={() => editorModel.toggleRecording()} isRecording={s.recording} />
           </>}
+        </View>
+      </div>
+      <div>
+        <View stream={editorModel.state}>
+          {s => !s.recording && s.sessionId 
+                && <Link
+                    label='go to recording'
+                    navigate={navigate}
+                    route={{path: '/reels/(?<id>.*)', params: {id: s.sessionId}}} />}
         </View>
       </div>
     </div>

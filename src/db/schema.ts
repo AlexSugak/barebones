@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS sessions;
 
 CREATE TABLE IF NOT EXISTS sessions (
   id serial PRIMARY KEY,
+  duration integer,
   changes jsonb
 );
 `

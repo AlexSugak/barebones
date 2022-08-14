@@ -59,7 +59,6 @@ export const specs: Specification[] = [
         await withDatabase(async sql => {
           await withWSServer({sql}, async port => {
             const ws = new WebSocket(getEditorWSUrl(port))
-            ws.onmessage = (msg => console.log('from server', msg.data))
             await opened(ws)
 
             const startAck = receivedMsg(ws, 'start')
@@ -97,7 +96,27 @@ export const specs: Specification[] = [
             Expect.equals(change2.timestamp, inDb[0].changes[1].timestamp)
           })
         })
-      })
+      }),
+      test('writes duration', async () => {
+        await withDatabase(async sql => {
+          await withWSServer({sql}, async port => {
+            const ws = new WebSocket(getEditorWSUrl(port))
+            await opened(ws)
+
+            const startAck = receivedMsg(ws, 'start')
+            ws.send(`start`)
+            const id = await startAck
+
+            const durationAck = receivedMsg(ws, 'duration')
+            ws.send('duration 1234')
+            await durationAck
+
+            const inDb = await sql<{duration: number}[]>`select duration from sessions where id = ${id}`
+            Expect.equals(1, inDb.length)
+            Expect.equals(1234, inDb[0].duration)
+          })
+        })
+      }),
     ]
   ),
   spec(
@@ -107,7 +126,7 @@ export const specs: Specification[] = [
           await withWebServer(
             { sql },
             async port => {
-              await sql<{}[]>`insert into sessions (changes) values ('[{"a": "123"}]')`
+              await sql<{}[]>`insert into sessions (duration, changes) values (2, '[{"a": "123"}]')`
 
               return request({
                 hostname: 'localhost',
@@ -118,7 +137,7 @@ export const specs: Specification[] = [
             },
             resp => {
               Expect.equals(200, resp.status)
-              const expectedResponse = JSON.stringify([{a: '123'}])
+              const expectedResponse = JSON.stringify({id: 1, duration: 2, changes: [{a: '123'}]})
               Expect.equals(expectedResponse, resp.data.toString())
             }
           ))

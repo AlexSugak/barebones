@@ -13,16 +13,26 @@ export const Player = React.forwardRef<HTMLVideoElement, PlayerProps>((props, re
 })
 
 export type TimeRangeProps = {
-  onPositionUpdate: (position: number) => void, 
+  onPositionUpdate: (position: number) => void,
+  onStartUpdatingPosition: () => void,
+  onEndUpdatingPosition: () => void,
   position: number,
   totalDuration: number
 }
-export const TimeRange = ({onPositionUpdate, position, totalDuration}: TimeRangeProps) => {
+export const TimeRange = ({
+  onPositionUpdate,
+  onStartUpdatingPosition,
+  onEndUpdatingPosition,
+  position, 
+  totalDuration
+}: TimeRangeProps) => {
   return (<input 
     type="range"
     min="0" 
     max={totalDuration}
     value={position}
+    onMouseDown={() => onStartUpdatingPosition()}
+    onMouseUp={() => onEndUpdatingPosition()}
     onChange={e => onPositionUpdate(Number(e.target.value))}
     style={{width: '100%', cursor: 'pointer'}} 
   />)

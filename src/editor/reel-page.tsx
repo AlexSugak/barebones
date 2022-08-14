@@ -6,10 +6,47 @@ import { useDisposable, useSubscription } from '../hooks'
 import { invariant } from '../errors'
 import { consoleLogger, logPrefix } from '../logger'
 import { View } from '../hoc'
-import { Change, ChangeMessage, ChangesWithUndo, EditorChange } from './editor-types'
+import { Change, ChangeMessage, SessionResponse } from './editor-types'
 import { Player, PlayBtn, TimeRange } from './player'
 import { Editor as TextEditor } from './editor'
-import { doNothing } from '../utils'
+import { doNothing, identity } from '../utils'
+
+export function indexChanges(changes: ChangeMessage[]): ChangeMessage[][] {
+  return changes.reduce<ChangeMessage[][]>((acc, change) => {
+    const second = Math.floor(change.timestamp / 1000)
+    if (acc.length > second) {
+      acc[second].push(change)
+    } else {
+      while(acc.length > 0 && acc.length < second) {
+        acc.push([])
+      }
+
+      acc.push([change])
+    }
+
+    return acc
+  }, [])
+}
+
+export function getChangesInRange(changesIndex: ChangeMessage[][], timeStart: number, timeEnd: number) {
+  let from: number
+  let to: number
+  if (timeEnd < timeStart) {
+    from = timeEnd
+    to = timeStart
+  } else {
+    from = timeStart
+    to = timeEnd
+  }
+
+  const fromSec = Math.floor(from / 1000)
+  const toSec = Math.floor(to / 1000)
+
+  return changesIndex
+            .slice(fromSec, toSec + 1)
+            .flatMap(identity)
+            .filter(c => c.timestamp >= from && c.timestamp < to)
+}
 
 export interface ReelState {
   videoDuration: number
@@ -26,8 +63,7 @@ export const initialState: ReelState = {
 }
 
 class ReelModel implements Disposable {
-  private _changes: ChangeMessage[] = []
-  private _changesLeft: ChangeMessage[] = []
+  private _changesIndex: ChangeMessage[][] = []
   private _changesSub: Rx.Subscription
 
   private _state: Rx.BehaviorSubject<ReelState> =
@@ -47,19 +83,21 @@ class ReelModel implements Disposable {
       credentials: 'same-origin'
     })
       .then(response => response.json().then(body => {
-        return { response, body: body as ChangeMessage[] }
+        return { response, body: body as SessionResponse }
       }))
       .then<void>(({ response, body }) => {
         if (response.ok) {
-          this._changes = body
-          this._changesLeft = body
+          this._changesIndex = indexChanges(body.changes)
+          this._logger.info('index', this._changesIndex)
+          const state = this._state.getValue()
+          this._state.next({...state, videoDuration: body.duration})
         }
 
         // TODO: display final session content as preview? 
 
         // TODO: errors
       })
-  }
+  } 
 
   get state(): Rx.Observable<ReelState> {
     return this._state
@@ -76,30 +114,56 @@ class ReelModel implements Disposable {
       return
     }
 
-    this._changesLeft = this._changes
-    const pushChanges = (msPassed: number, changes: ChangeMessage[]) => {
-      const head = changes[0]
-      if (head && head.timestamp < msPassed) {
-        const toApply = changes.splice(0, 1)[0]
-        this._pushChanges(toApply.changes)
-        pushChanges(msPassed, changes)
-      }
-      
-      return
-    }
-    
     void this._playerVideo.current.play()
     this._playerVideo.current.ontimeupdate = (e => {
-      // this._logger.info('time', e)
+      const videoPosition = (e.target as HTMLVideoElement).currentTime * 1000
+      this.updateState(s => ({...s, videoPosition }))
     })
     this._state.next({...state, playing: true})
-    this._setContent('')
     const intervalMs = 20
+    const startFrom = state.videoPosition
     this._changesSub = Rx.interval(intervalMs).pipe(
-      Rx.tap(passed => {
-        pushChanges(passed * intervalMs, this._changesLeft)
+      Rx.map(t => t * intervalMs + startFrom),
+      Rx.startWith(startFrom),
+      Rx.pairwise(),
+      Rx.tap(([from, to]) => {
+        this.applyChanges(from, to)
       })
     ).subscribe()
+  }
+
+  private applyChanges(timeStart: number, timeEnd: number) {
+    let forward = timeStart < timeEnd
+    const changes = getChangesInRange(this._changesIndex, timeStart, timeEnd)
+
+    if (forward) {
+      changes.forEach(c => this._pushChanges(c.changes))
+    } else {
+      for (let index = changes.length - 1; index >= 0; index--) {
+        this._pushChanges(changes[index].invertedChanges);
+      }
+    }
+  }
+
+  toggleSeek() {
+    const state = this._state.getValue()
+
+    if(state.playing) {
+      this.togglePlay()
+    }
+  }
+
+  setTime(timeMs: number) {
+    const state = this._state.getValue()
+
+    this._playerVideo.current.currentTime = timeMs / 1000
+    this.applyChanges(state.videoPosition, timeMs)
+    this.updateState(s => ({...s, videoPosition: timeMs}))
+  }
+
+  private updateState(update: (state: ReelState) => ReelState) {
+    const prevState = this._state.getValue()
+    this._state.next(update(prevState))
   }
 
   dispose(): void {
@@ -125,94 +189,6 @@ export const Reel = ({id}: {id: string}) => {
   )
   useDisposable(model)
 
-  const changesObs = new Rx.Subject<EditorChange>()
-  const isTimeTraveling = React.useRef(false)
-
-  const prevPosition = React.useRef(0)
-  const timePosition = new Rx.Subject<number>()
-  useSubscription(timePosition.pipe(
-    Rx.tap(p => {
-      timeTravel(p)
-    })
-  ))
-
-  //start with an empty change to be able to rewind all the way to the empty state
-  const changesWithUndo = React.useRef<ChangesWithUndo[]>([{changes: [], invertedChanges: []}])
-
-  const timeTravel = (timePosition: number) => {
-    // timePosition is from 0 to 100
-    // prevPosition is index in changesArray
-
-    isTimeTraveling.current = true
-
-    const changesTotal = changesWithUndo.current.length
-    const prev = prevPosition.current
-    const scale = 100 / changesTotal
-    const timeScaled = Math.floor(timePosition / scale)
-    
-    console.log({changesTotal, prev, timePosition, timeScaled, scale})
-
-    if (timeScaled === prev) {
-      return
-    }
-
-    if (timeScaled > prev) { // redo
-      const delta = [...changesWithUndo.current].splice(prev + 1, timeScaled - prev)
-      console.log(delta)
-      redo(delta, () => {
-        isTimeTraveling.current = false
-        prevPosition.current = timeScaled
-      })
-    } else { // undo
-      const delta = [...changesWithUndo.current].splice(timeScaled + 1, prev - timeScaled)
-      console.log(delta)
-      undo(delta, () => {
-        isTimeTraveling.current = false
-        prevPosition.current = timeScaled
-      })
-    }
-  }
-
-  const redo = (c: ChangesWithUndo[], onFinished: () => void, delay = 0) => {
-    if (c.length === 0) {
-      onFinished()
-      return
-    }
-
-    const first = c.splice(0, 1)[0]
-
-    editorRef.current.getModel().pushEditOperations(
-      [], 
-      first.changes.map(c => ({...c, forceMoveMarkers: true})), 
-      null
-    )
-    if (delay > 0) {
-      setTimeout(() => redo(c, onFinished, delay), delay)
-    } else {
-      redo(c, onFinished)
-    }
-  }
-
-  const undo = (c: ChangesWithUndo[], onFinished: () => void, delay = 0) => {
-    if (c.length === 0) {
-      onFinished()
-      return
-    }
-
-    const last = c.pop()
-
-    editorRef.current.getModel().pushEditOperations(
-      [], 
-      last.invertedChanges.map(c => ({...c, forceMoveMarkers: true})), 
-      null
-    )
-    if (delay > 0) {
-      setTimeout(() => undo(c, onFinished, delay), delay)
-    } else {
-      undo(c, onFinished)
-    }
-  }
-
   return (
     <div className='inline-flex flex-column m-1'>
       <div className='inline-flex'>
@@ -223,13 +199,20 @@ export const Reel = ({id}: {id: string}) => {
       </div>
       <div style={{width: '100%'}}>
       <View stream={model.state}>
-          {s => <TimeRange totalDuration={s.videoDuration} position={s.videoPosition} onPositionUpdate={doNothing} />}
+          {s => <TimeRange 
+                  totalDuration={s.videoDuration} 
+                  position={s.videoPosition}
+                  onStartUpdatingPosition={() => model.toggleSeek()}
+                  onEndUpdatingPosition={() => model.toggleSeek()}
+                  onPositionUpdate={t => model.setTime(t)} />}
         </View>
       </div>
       <div>
         <View stream={model.state}>
           {s => <>
             <PlayBtn onClick={() => model.togglePlay()} isPlaying={s.playing} />
+            <br/>
+            {`duration: ${s.videoDuration / 1000} s`}
           </>}
         </View>
       </div>

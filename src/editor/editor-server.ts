@@ -14,14 +14,14 @@ const videoDir = tmpDir
 
 export const init: EndpointInit = ({sql}: Dependencies, app: express.Express) => {
   app.get('/api/editor/sessions/:id', async (req, res) => {
-    const sessions = await sql<{changes: any[]}[]>`select * from sessions where id = ${req.params.id}`
+    const sessions = await sql<{duration: number, changes: any[]}[]>`select * from sessions where id = ${req.params.id}`
     
     if (sessions.length === 0) {
       res.status(404)
       return res.json({error: 'not found'})
     }
 
-    return res.json(sessions[0].changes)
+    return res.json(sessions[0])
   })
 }
 
@@ -85,6 +85,17 @@ export const initWS: WSInit = ({sql}: Dependencies, server: http.Server) => {
 
         // send ack
         ws.send(`change`)
+        return
+      }
+
+      if (msgStr.startsWith('duration')) {
+        invariant(sessionId !== null, 'cannot receive duration before session is started')
+
+        const duration = msgPayload('duration')(msgStr)
+        await sql<any>`update sessions set duration = ${duration} where id = ${sessionId}`
+
+        // send ack
+        ws.send(`duration`)
         return
       }
   

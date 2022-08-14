@@ -27,7 +27,7 @@ const login = (userName: string, password: string) => {
 const views: Views = {
   login: () => <Login onLogin={login} />,
   stories: () => <Stories />,
-  editor: () => <Editor />,
+  editor: () => <Editor navigate={url => router.navigate(url)} />,
   reel: (id) => <Reel id={id} />,
 }
 

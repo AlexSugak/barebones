@@ -6,6 +6,7 @@ import { specs as routerSpecs } from '../tests/router.spec'
 import { specs as serverSpecs } from '../tests/server.spec'
 import { specs as authSpecs } from '../auth/auth.spec'
 import { specs as editorSpecs } from '../editor/editor.spec'
+import { specs as reelSpecs } from '../editor/reel-page.spec'
 import { specs as dbSpecs } from '../db/db.spec'
 
 const specs = [
@@ -15,7 +16,8 @@ const specs = [
   ...serverSpecs,
   ...authSpecs,
   ...dbSpecs,
-  ...editorSpecs
+  ...editorSpecs,
+  ...reelSpecs
 ]
 
 const greenLog = coloredLog(Colors.FgGreen)

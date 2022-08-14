@@ -15,3 +15,8 @@ export interface EditorChange {
 export interface ChangeMessage extends ChangesWithUndo {
   readonly timestamp: number
 }
+
+export interface SessionResponse {
+  changes: ChangeMessage[],
+  duration: number
+}
